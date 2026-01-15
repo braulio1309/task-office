@@ -165,8 +165,8 @@ class CalendarTaskTest extends TestCase
 
         $response = $this->postJson('/calendars', $taskData);
 
-        // Depending on validation, this should fail
-        // The exact status code may vary based on your validation setup
+        // Should fail validation due to missing required stage_id
         $response->assertStatus(422);
+        $response->assertJsonValidationErrors('stage_id');
     }
 }

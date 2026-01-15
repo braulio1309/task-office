@@ -39,7 +39,7 @@ class CalendarService extends AppService
         $date = $task->end_date ?? $task->created_at;
         
         // Format stage information if available
-        $stageName = $task->stage ? $task->stage->name : 'Sin etapa';
+        $stageName = $task->stage ? $task->stage->name : __('No Stage');
         
         // Build title with stage information
         $title = $task->title . ' (' . $stageName . ')';

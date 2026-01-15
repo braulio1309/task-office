@@ -110,7 +110,7 @@ export default {
                 supervisor: null,
                 status: 'pending',
                 end_date: '',
-                owner_name: 'Default User'
+                owner_name: ''
             },
         }
     },
@@ -131,7 +131,7 @@ export default {
                 })
                 .catch(error => {
                     console.error(error);
-                    this.$toastr.e('Error cargando usuarios');
+                    this.$toastr.e(this.$t('error_loading_users') || 'Error loading users');
                 });
         },
         getStages() {
@@ -141,7 +141,7 @@ export default {
                 })
                 .catch(error => {
                     console.error(error);
-                    this.$toastr.e('Error cargando etapas');
+                    this.$toastr.e(this.$t('error_loading_stages') || 'Error loading stages');
                 });
         },
         doDeleteEvent() {
@@ -166,7 +166,7 @@ export default {
         submitEvents() {
             // Validate required fields
             if (!this.formData.stage_id) {
-                this.$toastr.e('Por favor seleccione una etapa');
+                this.$toastr.e(this.$t('please_select_stage') || 'Please select a stage');
                 return;
             }
             this.save(this.formData);
