@@ -13,8 +13,8 @@
 
             <!--Add popup modal-->
 
-            <event-add-edit-modal
-                :event-data="eventData"
+            <task-add-edit-modal-calendar
+                :task-data="taskData"
                 :selected-url="selectedUrl"
                 @reloadCalendar="initCalendar"
             />
@@ -32,11 +32,11 @@ export default {
     data() {
         return {
             selectedUrl: '',
-            eventData: '',
+            taskData: '',
             preloader: false,
             options: {
-                select: this.createEvent,
-                eventClick: this.selectedEvent,
+                select: this.createTask,
+                eventClick: this.selectedTask,
                 initialEvents: []
             }
         }
@@ -61,13 +61,13 @@ export default {
             document.getElementsByClassName("custom-modal")[0].classList.add("d-none");
             this.selectedUrl = '';
         },
-        createEvent(arg) {
-            this.eventData = arg;
+        createTask(arg) {
+            this.taskData = arg;
             this.selectedUrl = '';
         },
-        selectedEvent(arg) {
+        selectedTask(arg) {
             this.selectedUrl = `${CALENDARS}/${arg.event.id}`;
-            this.eventData = arg;
+            this.taskData = arg;
         },
         setView(){
             setTimeout(()=> {

@@ -3,6 +3,7 @@
 namespace Database\Factories\App\SamplePage\KanbanView;
 
 use App\Models\App\SamplePage\KanbanView\Task;
+use App\Models\App\SamplePage\KanbanView\Stage;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class TaskFactory extends Factory
@@ -22,7 +23,11 @@ class TaskFactory extends Factory
     public function definition()
     {
         return [
-            'title' => $this->faker->name,
+            'title' => $this->faker->sentence(3),
+            'owner_name' => $this->faker->name,
+            'stage_id' => Stage::factory(),
+            'end_date' => $this->faker->date(),
+            'status' => $this->faker->randomElement(['pending', 'completed', 'overdue']),
         ];
     }
 }

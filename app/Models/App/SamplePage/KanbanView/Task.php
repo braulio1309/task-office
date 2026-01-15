@@ -3,12 +3,13 @@
 namespace App\Models\App\SamplePage\KanbanView;
 
 use App\Models\App\AppModel;
+use App\Models\App\Traits\TaskValidationRules;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Core\Auth\User;
 
 class Task extends AppModel
 {
-    use HasFactory;
+    use HasFactory, TaskValidationRules;
 
     protected $fillable = ['title', 'owner_name', 'stage_id', 'end_date', 'supervisor', 'assigned_to', 'status'];
 
@@ -29,6 +30,6 @@ class Task extends AppModel
      */
     public function supervisor()
     {
-        return $this->belongsTo(User::class, 'supervisor_id');
+        return $this->belongsTo(User::class, 'supervisor');
     }
 }

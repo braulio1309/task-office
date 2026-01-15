@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\App;
 
-use App\Models\App\SamplePage\Calendar;
+use App\Models\App\SamplePage\KanbanView\Task;
 
 class CalendarRequest extends AppRequest
 {
@@ -13,6 +13,6 @@ class CalendarRequest extends AppRequest
      */
     public function rules()
     {
-        return $this->initRules(new Calendar());
+        return $this->initRules(new Task());
     }
 }
