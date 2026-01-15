@@ -42,7 +42,7 @@ class CalendarController extends Controller
     public function store(Request $request)
     {
         $this->service->save();
-        return created_responses('event');
+        return created_responses('task');
     }
 
     /**
@@ -77,7 +77,7 @@ class CalendarController extends Controller
     public function update(Request $request, $id)
     {
         $this->service->find($id)->update($request->all());
-        return updated_responses('event');
+        return updated_responses('task');
     }
 
     /**
@@ -89,6 +89,6 @@ class CalendarController extends Controller
     public function destroy($id)
     {
         $this->service->find($id)->delete();
-        return deleted_responses('event');
+        return deleted_responses('task');
     }
 }
