@@ -72,6 +72,7 @@ Vue.component('map-page', require('./Components/Views/Demo/Pages/map/index').def
 Vue.component('blank-page', require('./Components/Views/Demo/Pages/Blank').default);
 Vue.component('calendar-view', require('./Components/Views/Demo/Pages/calendar-view/CalendarView').default);
 Vue.component('event-add-edit-modal', require('./Components/Views/Demo/Pages/calendar-view/EventAddEditModal').default);
+Vue.component('task-add-edit-modal-calendar', require('./Components/Views/Demo/Pages/calendar-view/TaskAddEditModal').default);
 Vue.component('basic-report', require('./Components/Views/Demo/Pages/report/BasicReport.vue').default);
 Vue.component('overview', require('./Components/Views/Demo/Pages/report/Overview.vue').default);
 Vue.component('job-overview', require('./Components/Views/Demo/Pages/report/JobOverview.vue').default);

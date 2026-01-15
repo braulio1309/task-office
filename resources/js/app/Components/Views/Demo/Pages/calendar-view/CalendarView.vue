@@ -13,7 +13,7 @@
 
             <!--Add popup modal-->
 
-            <task-add-edit-modal
+            <task-add-edit-modal-calendar
                 :task-data="taskData"
                 :selected-url="selectedUrl"
                 @reloadCalendar="initCalendar"
