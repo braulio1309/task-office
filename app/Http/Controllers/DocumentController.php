@@ -84,4 +84,101 @@ class DocumentController extends Controller
 
         return response()->json($folder);
     }
+
+    /**
+     * Ver/Previsualizar un documento
+     */
+    public function view($id)
+    {
+        $document = Document::findOrFail($id);
+        
+        // Verificar que el archivo existe
+        if (!Storage::disk('public')->exists($document->file_path)) {
+            return response()->json(['error' => 'Archivo no encontrado'], 404);
+        }
+
+        // Obtener el contenido del archivo
+        $file = Storage::disk('public')->get($document->file_path);
+        
+        // Lista blanca de MIME types permitidos
+        $allowedMimeTypes = [
+            'image/jpeg', 'image/png', 'image/gif', 'image/svg+xml', 'image/webp', 'image/bmp',
+            'application/pdf',
+            'text/plain', 'text/csv',
+            'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/zip', 'application/x-rar-compressed'
+        ];
+        
+        // Validar MIME type contra lista blanca
+        $mimeType = $document->mime_type ?: 'application/octet-stream';
+        if (!in_array($mimeType, $allowedMimeTypes)) {
+            $mimeType = 'application/octet-stream';
+        }
+
+        // Sanitizar el nombre del archivo más estrictamente
+        $safeName = preg_replace('/[^\w\s\-_\.]/', '', $document->name);
+        if (empty($safeName)) {
+            $safeName = 'document';
+        }
+        
+        // Retornar el archivo con el tipo MIME correcto
+        return response($file, 200)
+            ->header('Content-Type', $mimeType)
+            ->header('Content-Disposition', 'inline; filename="' . $safeName . '"')
+            ->header('X-Content-Type-Options', 'nosniff');
+    }
+
+    /**
+     * Renombrar un documento
+     */
+    public function rename(Request $request, $id)
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        
+        $document = Document::findOrFail($id);
+        $document->name = $request->name;
+        $document->save();
+
+        return response()->json($document);
+    }
+
+    /**
+     * Eliminar un documento
+     */
+    public function deleteFile($id)
+    {
+        $document = Document::findOrFail($id);
+        
+        // Eliminar el archivo físico
+        if (Storage::disk('public')->exists($document->file_path)) {
+            Storage::disk('public')->delete($document->file_path);
+        }
+        
+        $document->delete();
+
+        return response()->json(['message' => 'Documento eliminado correctamente']);
+    }
+
+    /**
+     * Eliminar una carpeta y todo su contenido
+     */
+    public function deleteFolder($id)
+    {
+        $folder = Folder::findOrFail($id);
+        
+        // Eliminar todos los documentos de la carpeta
+        $documents = Document::where('folder_id', $folder->id)->get();
+        foreach ($documents as $document) {
+            if (Storage::disk('public')->exists($document->file_path)) {
+                Storage::disk('public')->delete($document->file_path);
+            }
+            $document->delete();
+        }
+        
+        // Eliminar la carpeta (las subcarpetas se eliminan automáticamente por cascade)
+        $folder->delete();
+
+        return response()->json(['message' => 'Carpeta eliminada correctamente']);
+    }
 }

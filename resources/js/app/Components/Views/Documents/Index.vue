@@ -58,6 +58,10 @@
 
                                     <div class="file-actions d-flex justify-content-center align-items-center">
                                         
+                                        <button @click="previewFile(file)" class="btn btn-sm btn-primary mr-1 icon-btn" title="Vista Previa">
+                                            <i class="fa fa-eye"></i>
+                                        </button>
+
                                         <a :href="file.download_url" target="_blank" class="btn btn-sm btn-success mr-1 icon-btn" title="Descargar">
                                             <i class="fa fa-download"></i>
                                         </a>
@@ -140,6 +144,54 @@
             </div>
         </div>
 
+        <!-- Modal de Vista Previa de Documentos -->
+        <div class="modal fade" id="previewModal" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Vista Previa: {{ previewData.name }}</h5>
+                        <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                    </div>
+                    <div class="modal-body p-0" style="min-height: 500px; max-height: 80vh; overflow: auto;">
+                        <div v-if="previewLoading" class="d-flex justify-content-center align-items-center" style="height: 500px;">
+                            <div class="spinner-border text-primary" role="status"></div>
+                        </div>
+                        
+                        <!-- Vista previa para imágenes -->
+                        <div v-else-if="isImage(previewData.mime_type)" class="text-center p-3">
+                            <img :src="previewData.preview_url" class="img-fluid" :alt="previewData.name" style="max-width: 100%; max-height: 70vh;">
+                        </div>
+                        
+                        <!-- Vista previa para PDFs -->
+                        <!-- Note: sandbox="allow-scripts allow-same-origin" is required for PDF rendering.
+                             The same-origin policy is needed for the browser's native PDF viewer to function.
+                             Files are served from our own domain via the /documents/view endpoint. -->
+                        <div v-else-if="isPDF(previewData.mime_type)" style="height: 70vh;">
+                            <iframe :src="previewData.preview_url" style="width: 100%; height: 100%; border: none;" sandbox="allow-scripts allow-same-origin"></iframe>
+                        </div>
+                        
+                        <!-- Mensaje para otros tipos de archivos -->
+                        <div v-else class="text-center p-5">
+                            <i :class="getFileIcon(previewData.mime_type)" class="fa-5x mb-3"></i>
+                            <h5>{{ previewData.name }}</h5>
+                            <p class="text-muted">Tipo: {{ previewData.mime_type }}</p>
+                            <p class="text-muted">Tamaño: {{ previewData.readable_size }}</p>
+                            <p class="text-muted mt-3">Este tipo de archivo no puede ser previsualizado en el navegador.</p>
+                            <a :href="previewData.download_url" target="_blank" class="btn btn-primary mt-3">
+                                <i class="fa fa-download mr-2"></i>Descargar Archivo
+                            </a>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <a :href="previewData.download_url" target="_blank" class="btn btn-success mr-auto">
+                            <i class="fa fa-download mr-2"></i>Descargar
+                        </a>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </template>
 
@@ -155,6 +207,7 @@ export default {
         return {
             loading: false,
             uploading: false,
+            previewLoading: false,
             
             // Estado de Carpetas y Archivos
             currentFolderId: null,
@@ -170,6 +223,14 @@ export default {
             renameData: {
                 id: null,
                 newName: ''
+            },
+            previewData: {
+                id: null,
+                name: '',
+                mime_type: '',
+                preview_url: '',
+                download_url: '',
+                readable_size: ''
             }
         };
     },
@@ -336,6 +397,27 @@ export default {
             if (mime.includes('audio')) return 'fa fa-file-audio text-info';
             if (mime.includes('zip') || mime.includes('compressed')) return 'fa fa-file-archive text-dark';
             return 'fa fa-file text-secondary';
+        },
+
+        // --- PREVIEW DE DOCUMENTOS ---
+        previewFile(file) {
+            this.previewData = {
+                id: file.id,
+                name: file.name,
+                mime_type: file.mime_type,
+                preview_url: file.preview_url,
+                download_url: file.download_url,
+                readable_size: file.readable_size
+            };
+            $('#previewModal').modal('show');
+        },
+
+        isImage(mimeType) {
+            return mimeType && mimeType.includes('image');
+        },
+
+        isPDF(mimeType) {
+            return mimeType && mimeType.includes('pdf');
         }
     }
 }
