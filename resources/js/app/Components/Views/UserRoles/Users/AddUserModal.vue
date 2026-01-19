@@ -87,9 +87,18 @@
             submit() {
                 // Generate default password: first name + last name without spaces + "1@"
                 // This ensures it meets the regex requirements (digit and special character)
-                const firstName = (this.user.first_name || '').trim();
-                const lastName = (this.user.last_name || '').trim();
-                this.user.password = firstName + lastName + '1@';
+                const firstName = (this.user.first_name || '').trim().replace(/\s+/g, '');
+                const lastName = (this.user.last_name || '').trim().replace(/\s+/g, '');
+                const baseName = firstName + lastName;
+                
+                // Ensure minimum length of 8 characters by padding if needed
+                if (baseName.length < 6) {
+                    // If name is too short, add additional random characters
+                    const timestamp = Date.now().toString().slice(-4);
+                    this.user.password = baseName + timestamp + '1@';
+                } else {
+                    this.user.password = baseName + '1@';
+                }
                 
                 this.save(this.user);
             },
