@@ -91,9 +91,12 @@
                 const lastName = (this.user.last_name || '').trim().replace(/\s+/g, '');
                 const baseName = firstName + lastName;
                 
-                // Ensure minimum length of 8 characters by padding if needed
-                if (baseName.length < 6) {
-                    // If name is too short, add additional random characters
+                // Minimum password length required is 8 characters
+                // baseName needs at least 6 chars to reach 8 after adding "1@" (2 chars)
+                const MIN_BASE_LENGTH = 6;
+                
+                if (baseName.length < MIN_BASE_LENGTH) {
+                    // If name is too short, add timestamp to ensure minimum length
                     const timestamp = Date.now().toString().slice(-4);
                     this.user.password = baseName + timestamp + '1@';
                 } else {
@@ -106,6 +109,14 @@
             afterSuccess(res) {
                 this.$toastr.s(res.data.message);
                 this.reLoadTable();
+                // Reset form data after successful submission
+                this.user = {
+                    first_name: '',
+                    last_name: '',
+                    email: '',
+                    password: '',
+                    roles: []
+                };
             },
             
             getRoles(){
@@ -116,7 +127,7 @@
                 this.axiosGet(url).then(response => {
                     this.roleLists = response.data.data;
                 }).catch(({response}) => {
-                    // Handle error silently
+                    this.$toastr.e('Failed to load roles. Please try again.');
                 }).finally(() => {
                     this.preloader = false;
                 });
