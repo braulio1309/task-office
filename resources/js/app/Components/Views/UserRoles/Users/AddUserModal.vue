@@ -85,10 +85,11 @@
         },
         methods: {
             submit() {
-                // Generate default password: first name + last name without spaces
+                // Generate default password: first name + last name without spaces + "1@"
+                // This ensures it meets the regex requirements (digit and special character)
                 const firstName = (this.user.first_name || '').trim();
                 const lastName = (this.user.last_name || '').trim();
-                this.user.password = firstName + lastName;
+                this.user.password = firstName + lastName + '1@';
                 
                 this.save(this.user);
             },
