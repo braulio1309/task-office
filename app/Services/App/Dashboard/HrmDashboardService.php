@@ -121,8 +121,8 @@ class HrmDashboardService extends AppService
                 'borderWidth' => 0,
                 'backgroundColor' => [
                     '#ff9801',
-                    '#4466F2',
-                    '#348cd4',
+                    '#D96017',
+                    '#14632E',
                     '#f75320'
                 ],
                 'data' => $random_array

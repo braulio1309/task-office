@@ -354,7 +354,7 @@ export default {
 }
 
 .file-card:hover {
-    border-color: #4466f2 !important; /* Color primario al borde */
+    border-color: var(--brand-color) !important; /* Color primario al borde */
 }
 
 /* --- LOGICA DE BOTONERA DESLIZANTE --- */

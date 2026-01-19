@@ -56,7 +56,7 @@ export default {
         			},
         			{
             			label: 'Purchase',
-            			backgroundColor: '#4466F2',
+            			backgroundColor: '#D96017',
             			data: [20, 40, 32, 49, 20, 50, 19, 30, 70, 20, 42, 21]
         			}
     			]
@@ -68,8 +68,8 @@ export default {
         			{
             			backgroundColor: [
                 			'#f96868',
-                			'#4466F2',
-                			'#2e383e',
+                			'#D96017',
+                			'#14632E',
                 			'#6a008a'
             			],
             			data: [20, 25, 40, 15]
@@ -82,8 +82,8 @@ export default {
         			{
             			backgroundColor: [
                 			'#f96868',
-                			'#4466F2',
-                			'#2e383e',
+                			'#D96017',
+                			'#14632E',
                 			'#6a008a'
             			],
             			data: [20, 25, 40, 15]
@@ -95,7 +95,7 @@ export default {
     			dataSets: [
         			{
             			label: 'Data One',
-            			backgroundColor: '#4466F2',
+            			backgroundColor: '#D96017',
             			data: [40, 20, 52, 39, 30, 60, 39, 80, 45, 30, 22, 15]
         			}
     			]

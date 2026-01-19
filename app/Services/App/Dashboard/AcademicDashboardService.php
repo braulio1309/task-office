@@ -37,7 +37,7 @@ class AcademicDashboardService extends AppService
         $data_set = [
             [
                 'borderWidth' => 0,
-                'backgroundColor' => ['#ff9801', '#4466F2', '#348cd4', '#f75320'],
+                'backgroundColor' => ['#ff9801', '#D96017', '#14632E', '#f75320'],
                 'data' => $random_array
             ]
         ];

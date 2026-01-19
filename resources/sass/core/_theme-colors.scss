@@ -2,6 +2,11 @@
 
 :root {
   --base-color: #{$base-color};
+  --brand-color: #{$brand-color};
+  --brand-secondary-color: #{$brand-secondary-color};
+  --brand-color-10: #{rgba($brand-color, 0.1)};
+  --brand-color-40: #{rgba($brand-color, 0.4)};
+  --brand-color-50: #{rgba($brand-color, 0.5)};
   --default-font-color: #313131;
   --default-border-color: #F0F2F5;
   --dropdown-menu-bg: #{$white};
