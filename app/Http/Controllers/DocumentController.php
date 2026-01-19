@@ -99,12 +99,16 @@ class DocumentController extends Controller
 
         // Obtener el contenido del archivo
         $file = Storage::disk('public')->get($document->file_path);
-        $mimeType = Storage::disk('public')->mimeType($document->file_path);
+        // Usar el mime_type guardado en la base de datos, con fallback
+        $mimeType = $document->mime_type ?: 'application/octet-stream';
 
+        // Escapar el nombre del archivo para prevenir inyección de headers
+        $safeName = str_replace(['"', "\r", "\n"], '', $document->name);
+        
         // Retornar el archivo con el tipo MIME correcto
         return response($file, 200)
             ->header('Content-Type', $mimeType)
-            ->header('Content-Disposition', 'inline; filename="' . $document->name . '"');
+            ->header('Content-Disposition', 'inline; filename="' . $safeName . '"');
     }
 
     /**

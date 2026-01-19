@@ -164,7 +164,7 @@
                         
                         <!-- Vista previa para PDFs -->
                         <div v-else-if="isPDF(previewData.mime_type)" style="height: 70vh;">
-                            <iframe :src="previewData.preview_url" style="width: 100%; height: 100%; border: none;"></iframe>
+                            <iframe :src="previewData.preview_url" style="width: 100%; height: 100%; border: none;" sandbox="allow-scripts allow-same-origin"></iframe>
                         </div>
                         
                         <!-- Mensaje para otros tipos de archivos -->
