@@ -43,6 +43,7 @@ Vue.component("app-dropdown-menu", require('./components/buttons/DropdownMenu').
 Vue.component("app-navbar", require('./components/layouts/Navbar').default);
 Vue.component("app-navbar-language-dropdown", require('./components/layouts/navbar-dropdowns/LanguageDropdown').default);
 Vue.component("app-navbar-notification-dropdown", require('./components/layouts/navbar-dropdowns/NotificationDropdown').default);
+Vue.component("app-navbar-chat-notification-dropdown", require('./components/layouts/navbar-dropdowns/ChatNotificationDropdown').default);
 Vue.component("app-navbar-profile-dropdown", require('./components/layouts/navbar-dropdowns/ProfileDropdown').default);
 Vue.component("app-widget", require('./components/dashboard-widget/Index').default);
 Vue.component("app-confirmation-modal", require('./components/confirmation-modal/Index').default);

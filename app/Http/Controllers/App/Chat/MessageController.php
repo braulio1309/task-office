@@ -32,18 +32,55 @@ class MessageController extends Controller
             })->orderBy('created_at')->get();
     }
 
+    public function markAsRead(Request $request, $id)
+    {
+        // Mark messages as read for a specific conversation
+        Message::where('receiver_id', auth()->id())
+            ->where('sender_id', $id)
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+        
+        return response()->json(['status' => 'success']);
+    }
+
+    public function unreadCount()
+    {
+        // Get unread message count
+        $unreadCount = Message::where('receiver_id', auth()->id())
+            ->where('is_read', false)
+            ->count();
+        
+        // Get unread count per sender/group
+        $unreadBySender = Message::where('receiver_id', auth()->id())
+            ->where('is_read', false)
+            ->selectRaw('sender_id, chat_group_id, COUNT(*) as count')
+            ->groupBy('sender_id', 'chat_group_id')
+            ->get()
+            ->map(function($item) {
+                return [
+                    'id' => $item->chat_group_id ?: $item->sender_id,
+                    'count' => $item->count,
+                    'is_group' => !is_null($item->chat_group_id)
+                ];
+            });
+        
+        return response()->json([
+            'total' => $unreadCount,
+            'by_sender' => $unreadBySender
+        ]);
+    }
+
     public function store(Request $request)
     {
         $message = Message::create($request->only('message', 'receiver_id'));
         if ($request->file_upload) {
-            $file_path = $this->uploadImage(
-                request()->file('file_upload'),
-                'chat'
-            );
+            $file = request()->file('file_upload');
+            $file_path = $this->uploadImage($file, 'chat');
 
             $message->attachments()->updateOrCreate([
                 'message_id' => $message->id,
-                'path' => $file_path
+                'path' => $file_path,
+                'original_filename' => $file->getClientOriginalName()
             ]);
         }
 //        event(new ChatEvent($request->message, $user));
