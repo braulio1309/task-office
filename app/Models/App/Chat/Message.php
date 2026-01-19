@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Message extends Model
 {
-    protected $fillable = ['sender_id', 'receiver_id', 'message', 'type', 'chat_group_id'];
+    protected $fillable = ['sender_id', 'receiver_id', 'message', 'type', 'chat_group_id', 'is_read'];
 
     public static function boot()
     {

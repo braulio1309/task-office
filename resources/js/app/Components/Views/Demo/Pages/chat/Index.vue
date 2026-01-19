@@ -52,6 +52,9 @@
                                 <div class="contact-info">
                                     <p class="mb-0">{{ contact.full_name }}</p>
                                 </div>
+                                <span v-if="unreadCounts[contact.id] > 0" class="badge badge-danger badge-pill ml-auto">
+                                    {{ unreadCounts[contact.id] }}
+                                </span>
                             </a>
                         </template>
                         <div v-if="filteredGroups.length === 0" class="p-2 text-center text-muted text-size-12">
@@ -84,6 +87,9 @@
                                 <div class="contact-info">
                                     <p class="mb-0">{{ contact.full_name }}</p>
                                 </div>
+                                <span v-if="unreadCounts[contact.id] > 0" class="badge badge-danger badge-pill ml-auto">
+                                    {{ unreadCounts[contact.id] }}
+                                </span>
                             </a>
                         </template>
                          <div v-if="filteredUsers.length === 0" class="p-2 text-center text-muted text-size-12">
@@ -140,9 +146,15 @@
                                                     :title="userMessage.user.full_name"/>
                                     </div>
                                     <template v-if="userMessage.attachments.length">
-                                        <img class="chat-message-image img-thumbnail"
-                                                v-for="attachment in userMessage.attachments"
-                                                :src="`${urlGenerator(attachment.path)}`" alt="Not found"/>
+                                        <div class="chat-attachment" v-for="attachment in userMessage.attachments" :key="attachment.id">
+                                            <img class="chat-message-image img-thumbnail"
+                                                 :src="`${urlGenerator(attachment.path)}`" 
+                                                 alt="Image"/>
+                                            <div class="chat-attachment-name text-muted text-size-12 mt-1" v-if="attachment.original_filename">
+                                                <app-icon name="paperclip" class="size-12"/>
+                                                {{ attachment.original_filename }}
+                                            </div>
+                                        </div>
                                     </template>
                                     <div class="text" v-if="userMessage.message">
                                         <span v-html="userMessage.message"></span>
@@ -269,6 +281,7 @@ export default {
             fileUploadUrl: '',
             urlGenerator,
             newGroup: { name: '', members: [] },
+            unreadCounts: {}, // Object to store unread counts by contact id
             emojiList: [
                 {id: 1, code: '&#9994;'}, {id: 2, code: '&#9995;'}, {id: 3, code: '&#9996;'}, {id: 4, code: '&#128074;'},
                 {id: 5, code: '&#128076;'}, {id: 6, code: '&#128077;'}, {id: 7, code: '&#128078;'}, {id: 8, code: '&#128079;'},
@@ -333,7 +346,21 @@ export default {
             if (this.userInfo.id === user.id) return;
 
             this.userInfo = user;
-            this.getUserMessages(user.id); 
+            this.getUserMessages(user.id);
+            this.markMessagesAsRead(user.id);
+        },
+
+        async markMessagesAsRead(contactId) {
+            try {
+                await axios.post(`messages/${contactId}/mark-as-read`);
+                // Update unread count
+                if (this.unreadCounts[contactId]) {
+                    this.unreadCounts[contactId] = 0;
+                }
+                await this.getUnreadCounts();
+            } catch (error) {
+                console.error("Error marking messages as read", error);
+            }
         },
 
         setEmoji(code) {
@@ -384,8 +411,25 @@ export default {
             try {
                 const response = await axios.get('chat/users');
                 this.contactList = response.data;
+                await this.getUnreadCounts();
             } catch (error) {
-                console.error("Error cargando usuarios/grupos", error);
+                console.error("Error loading users/groups", error);
+            }
+        },
+
+        async getUnreadCounts() {
+            try {
+                const response = await axios.get('messages-unread-count');
+                // Replace the entire object to avoid stale counts
+                const newUnreadCounts = {};
+                response.data.by_sender.forEach(item => {
+                    newUnreadCounts[item.id] = item.count;
+                });
+                this.unreadCounts = newUnreadCounts;
+                // Emit event to update navbar notification
+                this.$root.$emit('chat-unread-count', response.data.total);
+            } catch (error) {
+                console.error("Error loading unread counts", error);
             }
         },
 
@@ -413,7 +457,7 @@ export default {
                 }
 
             } catch (error) {
-                console.error("Error cargando mensajes", error);
+                console.error("Error loading messages", error);
             } finally {
                 // Solo quitamos el loader si seguimos en el mismo chat
                 if (this.userInfo.id === requestedId) {
@@ -441,6 +485,9 @@ export default {
                     if (isCurrentChat) {
                        this.getUserMessages(this.userInfo.id);
                     }
+                    
+                    // Always refresh unread counts when new message arrives
+                    this.getUnreadCounts();
                 });
         }
     },
@@ -488,6 +535,16 @@ export default {
     max-width: 150px;
     margin-right: 10px;
 }
+.chat-attachment {
+    display: inline-block;
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+.chat-attachment-name {
+    max-width: 150px;
+    word-wrap: break-word;
+    text-align: center;
+}
 .chat-date {
     position: absolute;
     font-size: 0.5rem;
@@ -497,5 +554,14 @@ export default {
 .chat-avatar-group {
     position: relative;
     .avatars-group-container {}
+}
+.contact {
+    position: relative;
+    display: flex;
+    align-items: center;
+    .badge-pill {
+        position: absolute;
+        right: 10px;
+    }
 }
 </style>

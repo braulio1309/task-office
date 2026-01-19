@@ -13,3 +13,5 @@ Route::group(['prefix' => 'chat'], function () {
 
 Route::apiResource('messages', MessageController::class);
 Route::get('user-messages/{id}', [MessageController::class, 'userMessage']);
+Route::post('messages/{id}/mark-as-read', [MessageController::class, 'markAsRead']);
+Route::get('messages-unread-count', [MessageController::class, 'unreadCount']);

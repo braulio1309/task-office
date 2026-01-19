@@ -63,6 +63,8 @@
                             @loadNotifications="$emit('loadNotifications')"
                         />
 
+                        <app-navbar-chat-notification-dropdown />
+
                         <span class="topbar-divider d-none d-sm-block"/>
 
                         <app-navbar-profile-dropdown
