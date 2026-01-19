@@ -23,6 +23,10 @@ Route::view('/documents', 'documents.index');
 Route::get('documents/list', [App\Http\Controllers\DocumentController::class, 'list']);
 Route::post('documents/upload', [App\Http\Controllers\DocumentController::class, 'upload']);
 Route::post('documents/folder', [App\Http\Controllers\DocumentController::class, 'createFolder']);
+Route::get('documents/view/{id}', [App\Http\Controllers\DocumentController::class, 'view']);
+Route::post('documents/file/{id}/rename', [App\Http\Controllers\DocumentController::class, 'rename']);
+Route::delete('documents/file/{id}', [App\Http\Controllers\DocumentController::class, 'deleteFile']);
+Route::delete('documents/folder/{id}', [App\Http\Controllers\DocumentController::class, 'deleteFolder']);
 
 Route::view('/clients', 'clients.index');
 Route::view('/clients/create', 'clients.create');

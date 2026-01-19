@@ -43,7 +43,7 @@ class Document extends Model
         'created_by',
     ];
 
-    protected $appends = ['readable_size', 'download_url'];
+    protected $appends = ['readable_size', 'download_url', 'created_at_formatted', 'preview_url'];
 
     // ===========================
     // Relaciones
@@ -92,5 +92,21 @@ class Document extends Model
     {
         // Ajusta 'public' o 's3' según tu disco
         return Storage::disk('public')->url($this->file_path); 
+    }
+
+    /**
+     * Devuelve la URL para previsualizar el documento
+     */
+    public function getPreviewUrlAttribute()
+    {
+        return url('documents/view/' . $this->id);
+    }
+
+    /**
+     * Devuelve la fecha de creación formateada
+     */
+    public function getCreatedAtFormattedAttribute()
+    {
+        return $this->created_at ? $this->created_at->format('d/m/Y H:i') : '';
     }
 }
