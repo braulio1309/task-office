@@ -218,8 +218,8 @@ class EcommerceDashboardService extends AppService
         $dataset = [
             [
                 'label' => 'Dataset 1',
-                'backgroundColor' => '#4466F2',
-                'borderColor' => '#4466F2',
+                'backgroundColor' => '#D96017',
+                'borderColor' => '#D96017',
                 'borderWidth' => 1,
                 'data' => [500, 400, 450, 350, 450]
             ]

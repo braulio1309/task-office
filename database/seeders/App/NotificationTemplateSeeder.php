@@ -64,7 +64,7 @@ class NotificationTemplateSeeder extends Seeder
                     'default_content' => '<p><img src="{app_logo}" style="height: 75px"></p>
 <p>
 </p><p><span style="background-color: var(--form-control-bg) ; color: var(--default-font-color) ;">Hi {receiver_name}</span><br></p><p>Hope this mail finds you well and healthy. We are informing you that you\'ve been invited to our application by {action_by}. It\'ll be a great opportunity to work with you.</p><br>
-<p><a href="{invitation_url}" target="_blank" style="background: #4466F2;color: white;padding: 9px;border-radius: 4px;cursor: pointer; text-decoration: none; text-underline: none">Accept Invitation</a></p><br>
+<p><a href="{invitation_url}" target="_blank" style="background: #D96017;color: white;padding: 9px;border-radius: 4px;cursor: pointer; text-decoration: none; text-underline: none">Accept Invitation</a></p><br>
 
 <p></p><p>Thanks &amp; Regards,
 </p><p>{app_name}</p>',
@@ -81,7 +81,7 @@ class NotificationTemplateSeeder extends Seeder
                     'default_content' => '<p><img src="{app_logo}" style="height: 75px"></p>
 <p>
 </p><p><span style="background-color: var(--form-control-bg) ; color: var(--default-font-color) ;">Hi {receiver_name}</span><br></p><p>Your request for reset password has been approved from {app_name}. Press the button below to reset the password.</p><br>
-<p><a href="{reset_password_url}" style="background: #4466F2;color: white;padding: 9px;border-radius: 4px;cursor: pointer; text-decoration: none; text-underline: none" target="_blank">Reset password</a></p><br>
+<p><a href="{reset_password_url}" style="background: #D96017;color: white;padding: 9px;border-radius: 4px;cursor: pointer; text-decoration: none; text-underline: none" target="_blank">Reset password</a></p><br>
 
 We are highly expecting you as soon as possible. Hope you\'ll join us.
 <p></p><p>Thanks for being with us.
@@ -104,7 +104,7 @@ Hi {receiver_name}
 </span>
 <br></p>
 <p>Thank you for registering in {app_name}. Please press the button below to verify your email.</p><br>
-<p><a href="{user_verification_url}" style="background: #4466F2;color: white;padding: 9px;border-radius: 4px;cursor: pointer; text-decoration: none; text-underline: none" target="_blank">
+<p><a href="{user_verification_url}" style="background: #D96017;color: white;padding: 9px;border-radius: 4px;cursor: pointer; text-decoration: none; text-underline: none" target="_blank">
 Verify Email
 </a></p><br>
 <p>
@@ -135,7 +135,7 @@ We are highly expecting you as soon as possible. Hope you\'ll join us.
                 'content' => '<p><img src="{app_logo}" style="height: 75px"></p>
 <p>
 </p><p><span style="background-color: var(--form-control-bg) ; color: var(--default-font-color) ;">Hi {receiver_name}</span><br></p><p>It\'s a piece of good news that a new user {name} has been joined in our application invited by {action_by}. Hope you will enjoy his work and collaborations.</p><br>
-<p><a href="{resource_url}" style="background: #4466F2;color: white;padding: 9px;border-radius: 4px;cursor: pointer; text-decoration: none; text-underline: none" target="_blank">View Resource</a></p><br>
+<p><a href="{resource_url}" style="background: #D96017;color: white;padding: 9px;border-radius: 4px;cursor: pointer; text-decoration: none; text-underline: none" target="_blank">View Resource</a></p><br>
 
 <p></p><p>Thanks for being with us.
 </p><p>Regards,</p><p>{app_name}</p><p></p><p></p>'
@@ -146,7 +146,7 @@ We are highly expecting you as soon as possible. Hope you\'ll join us.
                 'content' => '<p><img src="{app_logo}" style="height: 75px"></p>
 <p>
 </p><p><span style="background-color: var(--form-control-bg) ; color: var(--default-font-color) ;">Hi {receiver_name}</span><br></p><p>It\'s a piece of good news that a new user {name} has been invited in our application, invited by {action_by}.</p><br>
-<p><a href="{resource_url}" style="background: #4466F2;color: white;padding: 9px;border-radius: 4px;cursor: pointer; text-decoration: none; text-underline: none" target="_blank">View Resource</a></p><br>
+<p><a href="{resource_url}" style="background: #D96017;color: white;padding: 9px;border-radius: 4px;cursor: pointer; text-decoration: none; text-underline: none" target="_blank">View Resource</a></p><br>
 <p></p><p>Thanks for being with us.
 </p><p>Regards,</p><p>{app_name}</p><p></p><p></p>'
             ],
@@ -156,7 +156,7 @@ We are highly expecting you as soon as possible. Hope you\'ll join us.
                 'content' => '<p><img src="{app_logo}" style="height: 75px"></p>
 <p>
 </p><p><span style="background-color: var(--form-control-bg) ; color: var(--default-font-color) ;">Hi {receiver_name}</span><br></p><p>It\'s a piece of good news that a new {resource} named {name} has been created in our application by {action_by}. Please have a look at that.</p><br>
-<p><a href="{resource_url}" style="background: #4466F2;color: white;padding: 9px;border-radius: 4px;cursor: pointer; ; text-decoration: none; text-underline: none" target="_blank">{button_label}</a></p><br>
+<p><a href="{resource_url}" style="background: #D96017;color: white;padding: 9px;border-radius: 4px;cursor: pointer; ; text-decoration: none; text-underline: none" target="_blank">{button_label}</a></p><br>
 <p></p><p>Thanks for being with us.
 </p><p>Regards,</p><p>{app_name}</p><p></p><p></p>'
             ],
@@ -166,7 +166,7 @@ We are highly expecting you as soon as possible. Hope you\'ll join us.
                 'content' => '<p><img src="{app_logo}" style="height: 75px"></p>
 <p>
 </p><p><span style="background-color: var(--form-control-bg) ; color: var(--default-font-color) ;">Hi {receiver_name}</span><br></p><p>It\'s a piece of good news that a {resource} named {name} has been updated in our application by {action_by}. Please have a look at that.</p><br>
-<p><a href="{resource_url}" style="background: #4466F2;color: white;padding: 9px;border-radius: 4px;cursor: pointer; text-decoration: none; text-underline: none" target="_blank">{button_label}</a></p><br>
+<p><a href="{resource_url}" style="background: #D96017;color: white;padding: 9px;border-radius: 4px;cursor: pointer; text-decoration: none; text-underline: none" target="_blank">{button_label}</a></p><br>
 
 <p></p><p>Thanks for being with us.
 </p><p>Regards,</p><p>{app_name}</p><p></p><p></p>'
@@ -186,7 +186,7 @@ We are highly expecting you as soon as possible. Hope you\'ll join us.
                 'content' => '<p><img src="{app_logo}" style="height: 75px"></p>
 <p>
 </p><p><span style="background-color: var(--form-control-bg) ; color: var(--default-font-color) ;">Hi {receiver_name}</span><br></p><p>It\'s a piece of good news that a {resource} named {name} has been confirmed in {brand_name} brand by {action_by}. Please have a look at that.</p><br>
-<p><a href="{resource_url}" style="background: #4466F2;color: white;padding: 9px;border-radius: 4px;cursor: pointer; text-decoration: none; text-underline: none" target="_blank">{button_label}</a></p><br>
+<p><a href="{resource_url}" style="background: #D96017;color: white;padding: 9px;border-radius: 4px;cursor: pointer; text-decoration: none; text-underline: none" target="_blank">{button_label}</a></p><br>
 
 <p></p><p>Thanks for being with us.
 </p><p>Regards,</p><p>{app_name}</p><p></p><p></p>'
@@ -197,7 +197,7 @@ We are highly expecting you as soon as possible. Hope you\'ll join us.
                 'content' => '<p><img src="{app_logo}" style="height: 75px"></p>
 <p>
 </p><p><span style="background-color: var(--form-control-bg) ; color: var(--default-font-color) ;">Hi {receiver_name}</span><br></p><p>It\'s a piece of good news that a {resource} named {name} has been sent successfully in {brand_name} brand by {action_by}. Please have a look at that.</p><br>
-<p><a href="{resource_url}" style="background: #4466F2;color: white;padding: 9px;border-radius: 4px;cursor: pointer; text-decoration: none; text-underline: none" target="_blank">{button_label}</a></p><br>
+<p><a href="{resource_url}" style="background: #D96017;color: white;padding: 9px;border-radius: 4px;cursor: pointer; text-decoration: none; text-underline: none" target="_blank">{button_label}</a></p><br>
 
 <p></p><p>Thanks for being with us.
 </p><p>Regards,</p><p>{app_name}</p><p></p><p></p>'
@@ -208,7 +208,7 @@ We are highly expecting you as soon as possible. Hope you\'ll join us.
                 'content' => '<p><img src="{app_logo}" style="height: 75px"></p>
 <p>
 </p><p><span style="background-color: var(--form-control-bg) ; color: var(--default-font-color) ;">Hi {receiver_name}</span><br></p><p>We are informing you that the subscriber(s) have been blacklisted in {brand_name} brand by {action_by}. Please have a look at that.</p><br>
-<p><a href="{resource_url}" style="background: #4466F2;color: white;padding: 9px;border-radius: 4px;cursor: pointer; text-decoration: none; text-underline: none" target="_blank">{button_label}</a></p><br>
+<p><a href="{resource_url}" style="background: #D96017;color: white;padding: 9px;border-radius: 4px;cursor: pointer; text-decoration: none; text-underline: none" target="_blank">{button_label}</a></p><br>
 
 <p></p><p>Thanks for being with us.
 </p><p>Regards,</p><p>{app_name}</p><p></p><p></p>'
@@ -219,7 +219,7 @@ We are highly expecting you as soon as possible. Hope you\'ll join us.
                 'content' => '<p><img src="{app_logo}" style="height: 75px"></p>
 <p>
 </p><p><span style="background-color: var(--form-control-bg) ; color: var(--default-font-color) ;">Hi {receiver_name}</span><br></p><p>It\'s a piece of good news that some subscribers have been imported in {brand_name} brand by {action_by}. Please have a look at that.</p><br>
-<p><a href="{resource_url}" style="background: #4466F2;color: white;padding: 9px;border-radius: 4px;cursor: pointer; text-decoration: none; text-underline: none" target="_blank">{button_label}</a></p><br>
+<p><a href="{resource_url}" style="background: #D96017;color: white;padding: 9px;border-radius: 4px;cursor: pointer; text-decoration: none; text-underline: none" target="_blank">{button_label}</a></p><br>
 
 <p></p><p>Thanks for being with us.
 </p><p>Regards,</p><p>{app_name}</p><p></p><p></p>'

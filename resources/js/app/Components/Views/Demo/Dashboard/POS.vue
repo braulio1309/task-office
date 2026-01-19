@@ -435,7 +435,7 @@ export default {
         border-radius: 3px;
         width: 72px;
         height: 72px;
-        background-color: #4466F2;
+        background-color: #D96017;
     }
 }
 </style>
