@@ -99,16 +99,34 @@ class DocumentController extends Controller
 
         // Obtener el contenido del archivo
         $file = Storage::disk('public')->get($document->file_path);
-        // Usar el mime_type guardado en la base de datos, con fallback
+        
+        // Lista blanca de MIME types permitidos
+        $allowedMimeTypes = [
+            'image/jpeg', 'image/png', 'image/gif', 'image/svg+xml', 'image/webp', 'image/bmp',
+            'application/pdf',
+            'text/plain', 'text/csv',
+            'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/zip', 'application/x-rar-compressed'
+        ];
+        
+        // Validar MIME type contra lista blanca
         $mimeType = $document->mime_type ?: 'application/octet-stream';
+        if (!in_array($mimeType, $allowedMimeTypes)) {
+            $mimeType = 'application/octet-stream';
+        }
 
-        // Escapar el nombre del archivo para prevenir inyección de headers
-        $safeName = str_replace(['"', "\r", "\n"], '', $document->name);
+        // Sanitizar el nombre del archivo más estrictamente
+        $safeName = preg_replace('/[^\w\s\-_\.]/', '', $document->name);
+        if (empty($safeName)) {
+            $safeName = 'document';
+        }
         
         // Retornar el archivo con el tipo MIME correcto
         return response($file, 200)
             ->header('Content-Type', $mimeType)
-            ->header('Content-Disposition', 'inline; filename="' . $safeName . '"');
+            ->header('Content-Disposition', 'inline; filename="' . $safeName . '"')
+            ->header('X-Content-Type-Options', 'nosniff');
     }
 
     /**

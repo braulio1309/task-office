@@ -163,6 +163,9 @@
                         </div>
                         
                         <!-- Vista previa para PDFs -->
+                        <!-- Note: sandbox="allow-scripts allow-same-origin" is required for PDF rendering.
+                             The same-origin policy is needed for the browser's native PDF viewer to function.
+                             Files are served from our own domain via the /documents/view endpoint. -->
                         <div v-else-if="isPDF(previewData.mime_type)" style="height: 70vh;">
                             <iframe :src="previewData.preview_url" style="width: 100%; height: 100%; border: none;" sandbox="allow-scripts allow-same-origin"></iframe>
                         </div>
