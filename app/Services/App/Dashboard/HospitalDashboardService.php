@@ -103,7 +103,7 @@ class HospitalDashboardService extends AppService
                 'borderWidth' => 0,
                 'backgroundColor' => [
                     '#713bdb',
-                    '#348cd4',
+                    '#14632E',
                     '#f75320'
                 ],
                 'data' => $random_array

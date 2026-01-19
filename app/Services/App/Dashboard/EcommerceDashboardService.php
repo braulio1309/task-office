@@ -109,8 +109,8 @@ class EcommerceDashboardService extends AppService
             'title' => 'profits',
             'fill' => false,
             'borderWidth' => 1.5,
-            'borderColor' => '#348cd4',
-            'backgroundColor' => '#348cd4',
+            'borderColor' => '#14632E',
+            'backgroundColor' => '#14632E',
             'data' => $profit_count_list
         ];
 

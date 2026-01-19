@@ -53,8 +53,8 @@
                                     {{ $t('sales') }}
                                     <span class="value">{{e_commerceDashboard.businessOverview.salesCount}}</span>
                                 </div>
-                                <div class="data-group-item" style="color: #348cd4;">
-                                    <span class="square" style="background-color: #348cd4;"/>
+                                <div class="data-group-item" style="color: #14632E;">
+                                    <span class="square" style="background-color: #14632E;"/>
                                     {{ $t('profit') }}
                                     <span class="value">{{e_commerceDashboard.businessOverview.profitsCount}}</span>
                                 </div>
