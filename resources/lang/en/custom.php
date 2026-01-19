@@ -64,6 +64,7 @@ return [
     'clear' => 'Clear',
     'add' => 'Add',
     'add_role' => 'Add Role',
+    'add_user' => 'Add User',
     'edit_role' => 'Edit Role',
     'user_s' => 'User(s)',
     'manage_users' => 'Manage Users',

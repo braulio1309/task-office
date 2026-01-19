@@ -18,7 +18,9 @@ export default {
             inviteModalId: 'user-invitation-modal',
             isInviteModalActive: false,
             isManageUsersModalActive: false,
-            manageUserModalId: 'manage-users-modal'
+            manageUserModalId: 'manage-users-modal',
+            addUserModalId: 'add-user-modal',
+            isAddUserModalActive: false
         },
         rowData : {}
 
@@ -48,6 +50,9 @@ export default {
         openUserModal({commit}, isActive){
             commit('OPEN_USER_MODAL',isActive);
         },
+        openAddUserModal({commit}, isActive){
+            commit('OPEN_ADD_USER_MODAL',isActive);
+        },
 
         setRowData({commit}, data){
             commit('SET_ROWDATA', data);
@@ -71,6 +76,9 @@ export default {
         },
         OPEN_USER_MODAL(state, isActive){
             state.users.isUserModalActive = isActive;
+        },
+        OPEN_ADD_USER_MODAL(state, isActive){
+            state.users.isAddUserModalActive = isActive;
         },
         SET_ROWDATA(state, data){
             state.rowData = data;

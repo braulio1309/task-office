@@ -7,6 +7,12 @@
             <div class="col-sm-12 col-md-6 breadcrumb-side-button">
                 <div class="float-md-right mb-3 mb-sm-3 mb-md-0">
                     <button type="button"
+                            class="btn btn-info btn-with-shadow mr-2"
+                            data-toggle="modal"
+                            @click="openAddUserModal">
+                        {{ $t('add_user') }}
+                    </button>
+                    <button type="button"
                             class="btn btn-success btn-with-shadow mr-2"
                             data-toggle="modal"
                             @click="operationForUserInvitation">
@@ -35,6 +41,9 @@
         <user-invitation-modal v-if="userAndRoles.users.isInviteModalActive"
                                @close-modal="closeInviteModal"/>
 
+        <add-user-modal v-if="userAndRoles.users.isAddUserModalActive"
+                        @close-modal="closeAddUserModal"/>
+
         <user-modal v-if="userAndRoles.users.isUserModalActive"
                     @close-modal="closeUserModal"/>
 
@@ -59,6 +68,7 @@
 
     import UserModal from "./Users/UserModal";
     import UserInvitationModal from "./Users/UserInvitationModal";
+    import AddUserModal from "./Users/AddUserModal";
     import ManageUsersModal from "./Users/ManageUsersModal";
     import User from "./Users/Index";
 
@@ -77,6 +87,7 @@
         components: {
             UserModal,
             UserInvitationModal,
+            AddUserModal,
             RolesAddEditModal,
             User,
             ManageUsersModal,
@@ -212,6 +223,21 @@
             closeUserModal() {
                 $('#' + this.userAndRoles.users.userModalId).modal('hide');
                 this.openUserModal(false);
+                this.resetData();
+            },
+
+            /**
+             * Open add user modal
+             * */
+            openAddUserModal(isActive=true) {
+                this.$store.dispatch('openAddUserModal', isActive)
+            },
+            /**
+             * Close add user modal
+             * */
+            closeAddUserModal() {
+                $('#' + this.userAndRoles.users.addUserModalId).modal('hide');
+                this.openAddUserModal(false);
                 this.resetData();
             },
 
