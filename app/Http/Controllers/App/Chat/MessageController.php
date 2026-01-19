@@ -76,11 +76,16 @@ class MessageController extends Controller
         if ($request->file_upload) {
             $file = request()->file('file_upload');
             $file_path = $this->uploadImage($file, 'chat');
+            
+            // Sanitize the original filename to prevent path traversal and special character issues
+            $originalFilename = $file->getClientOriginalName();
+            $originalFilename = basename($originalFilename); // Remove any path components
+            $originalFilename = preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalFilename); // Replace special chars
 
             $message->attachments()->updateOrCreate([
                 'message_id' => $message->id,
                 'path' => $file_path,
-                'original_filename' => $file->getClientOriginalName()
+                'original_filename' => $originalFilename
             ]);
         }
 //        event(new ChatEvent($request->message, $user));

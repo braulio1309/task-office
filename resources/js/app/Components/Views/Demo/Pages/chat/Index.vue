@@ -359,7 +359,7 @@ export default {
                 }
                 await this.getUnreadCounts();
             } catch (error) {
-                console.error("Error marcando mensajes como leídos", error);
+                console.error("Error marking messages as read", error);
             }
         },
 
@@ -413,21 +413,23 @@ export default {
                 this.contactList = response.data;
                 await this.getUnreadCounts();
             } catch (error) {
-                console.error("Error cargando usuarios/grupos", error);
+                console.error("Error loading users/groups", error);
             }
         },
 
         async getUnreadCounts() {
             try {
                 const response = await axios.get('messages-unread-count');
-                this.unreadCounts = {};
+                // Replace the entire object to avoid stale counts
+                const newUnreadCounts = {};
                 response.data.by_sender.forEach(item => {
-                    this.unreadCounts[item.id] = item.count;
+                    newUnreadCounts[item.id] = item.count;
                 });
+                this.unreadCounts = newUnreadCounts;
                 // Emit event to update navbar notification
                 this.$root.$emit('chat-unread-count', response.data.total);
             } catch (error) {
-                console.error("Error cargando conteos de no leídos", error);
+                console.error("Error loading unread counts", error);
             }
         },
 
@@ -455,7 +457,7 @@ export default {
                 }
 
             } catch (error) {
-                console.error("Error cargando mensajes", error);
+                console.error("Error loading messages", error);
             } finally {
                 // Solo quitamos el loader si seguimos en el mismo chat
                 if (this.userInfo.id === requestedId) {

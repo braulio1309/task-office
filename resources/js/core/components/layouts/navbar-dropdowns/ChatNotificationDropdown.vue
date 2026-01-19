@@ -72,11 +72,15 @@ export default {
         
         // Listen for Echo events if available
         if (typeof user !== 'undefined' && typeof Echo !== 'undefined') {
-            Echo.private(`chat.${user.id}`)
-                .listen('ChatEvent', (e) => {
-                    // Refresh unread count when new message arrives
-                    this.loadUnreadMessages();
-                });
+            try {
+                Echo.private(`chat.${user.id}`)
+                    .listen('ChatEvent', (e) => {
+                        // Refresh unread count when new message arrives
+                        this.loadUnreadMessages();
+                    });
+            } catch (error) {
+                console.error("Error setting up Echo listener", error);
+            }
         }
     },
     beforeDestroy() {
