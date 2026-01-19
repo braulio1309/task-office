@@ -59,7 +59,7 @@ export default {
 
 .form-control-button {
     // margin-left: -42px;
-    background-color: #D9601710;
+    background-color: var(--brand-color-10);
     border: none;
     height: 39px;
     width: 39px;
@@ -69,11 +69,11 @@ export default {
     align-items: center;
 
     &:hover {
-        background-color: #D9601740;
+        background-color: var(--brand-color-40);
     }
 
     &--active {
-        background-color: #D9601750;
+        background-color: var(--brand-color-50);
     }
 }
 

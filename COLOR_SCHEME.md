@@ -33,14 +33,32 @@ Based on the Inmobipina logo, the system uses the following brand colors:
 // Brand Colors - Inmobipina Color Scheme
 $brand-color: #D96017;              // Primary orange from logo
 $brand-secondary-color: #14632E;    // Secondary green from logo
-$brand-orange: #D96017;             // Explicit orange reference
-$brand-green: #14632E;              // Explicit green reference
 ```
 
-### 2. Theme Colors
+### 2. CSS Custom Properties (CSS Variables)
 **File**: `resources/sass/core/_theme-colors.scss`
 
-This file uses the variables from `_variables.scss` to generate CSS custom properties (CSS variables) for both light and dark themes.
+CSS custom properties are available for use in Vue components and stylesheets:
+
+```css
+:root {
+  --brand-color: #D96017;              /* Primary brand color */
+  --brand-secondary-color: #14632E;    /* Secondary brand color */
+  --brand-color-10: rgba(217, 96, 23, 0.1);  /* 10% opacity */
+  --brand-color-40: rgba(217, 96, 23, 0.4);  /* 40% opacity */
+  --brand-color-50: rgba(217, 96, 23, 0.5);  /* 50% opacity */
+}
+```
+
+**Usage in Vue components:**
+```css
+.my-element {
+  color: var(--brand-color);
+  background-color: var(--brand-color-10);
+}
+```
+
+This file uses the variables from `_variables.scss` to generate CSS custom properties for both light and dark themes.
 
 ### 3. Brand-Specific Styles
 **File**: `resources/sass/_brand.scss`
@@ -115,10 +133,11 @@ npm run dev
 ## Best Practices
 
 1. **Use SASS Variables**: Always prefer using `$brand-color` variable in SCSS files instead of hardcoding color values
-2. **Use CSS Custom Properties**: In Vue components, use `var(--brand-color)` when possible
-3. **Avoid Hardcoding**: Minimize hardcoded hex values in PHP and JavaScript
-4. **Chart Colors**: For charts, consider using a color palette array that includes both primary and secondary colors
-5. **Accessibility**: Ensure sufficient contrast ratios (minimum 4.5:1 for text) when changing colors
+2. **Use CSS Custom Properties**: In Vue component styles, use `var(--brand-color)` instead of hardcoded hex values for better maintainability
+3. **Avoid Hardcoding in JavaScript**: For chart colors and dynamic styles in JavaScript/PHP, consider creating a configuration constant
+4. **Use Opacity Variants**: Use pre-defined opacity variants like `var(--brand-color-10)` instead of manually adding alpha channels
+5. **Chart Colors**: For charts, consider using a color palette array that includes both primary and secondary colors
+6. **Accessibility**: Ensure sufficient contrast ratios (minimum 4.5:1 for text) when changing colors
 
 ## Color Palette for Charts
 

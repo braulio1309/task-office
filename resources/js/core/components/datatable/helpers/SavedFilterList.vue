@@ -173,7 +173,7 @@ export default {
         padding: 1rem 2rem 1rem 2rem !important;
 
         &:hover {
-            color: #D96017;
+            color: var(--brand-color);
         }
 
         &:focus {
@@ -181,7 +181,7 @@ export default {
         }
 
         &.active {
-            color: #D96017;
+            color: var(--brand-color);
         }
     }
 
