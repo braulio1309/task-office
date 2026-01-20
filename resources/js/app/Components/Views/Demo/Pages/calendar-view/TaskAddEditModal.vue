@@ -165,6 +165,8 @@ export default {
         },
         submitEvents() {
             // Validate required fields
+            //Pon en el enddate fijo pn un datetime ponlo en hardcode asi 'this.formData.end_date = '2024-12-31 23:59:59';'
+            this.formData.end_date = '2024-12-31 23:59:59';
             if (!this.formData.stage_id) {
                 this.$toastr.e(this.$t('please_select_stage') || 'Please select a stage');
                 return;

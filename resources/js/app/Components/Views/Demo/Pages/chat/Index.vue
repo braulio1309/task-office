@@ -138,27 +138,44 @@
                                 <p class="text-muted">No hay mensajes aún.</p>
                             </div>
                             <template v-for="userMessage in userMessageLists">
-                                <div class="message" :class="{'reply-message': userInfo.id === userMessage.user.id}"> 
+                                <div class="message" 
+                                     :class="{
+                                         'reply-message': userInfo.id === userMessage.user.id,
+                                         'sending': userMessage.is_sending
+                                     }"
+                                     :key="userMessage.id || userMessage.temp_id"> 
+                                    
                                     <div class="avatars-w-40" v-if="userMessage.user">
                                         <app-avatar :alt-text="userMessage.user.full_name"
                                                     :img="userMessage.user.profile_picture ? urlGenerator(userMessage.user.profile_picture.path) : userMessage.user.profile_picture"
                                                     :shadow="true"
                                                     :title="userMessage.user.full_name"/>
                                     </div>
+                                    
                                     <template v-if="userMessage.attachments.length">
-                                        <div class="chat-attachment" v-for="attachment in userMessage.attachments" :key="attachment.id">
+                                        <div class="chat-attachment" v-for="attachment in userMessage.attachments" :key="attachment.id || 'temp-att'">
                                             <img class="chat-message-image img-thumbnail"
-                                                 :src="`${urlGenerator(attachment.path)}`" 
+                                                 :src="attachment.is_local ? attachment.path : `${urlGenerator(attachment.path)}`" 
                                                  alt="Image"/>
+                                            
+                                            <div v-if="userMessage.is_sending" class="image-sending-overlay">
+                                                <div class="spinner-border text-light spinner-border-sm" role="status"></div>
+                                            </div>
+
                                             <div class="chat-attachment-name text-muted text-size-12 mt-1" v-if="attachment.original_filename">
                                                 <app-icon name="paperclip" class="size-12"/>
                                                 {{ attachment.original_filename }}
                                             </div>
                                         </div>
                                     </template>
+                                    
                                     <div class="text" v-if="userMessage.message">
                                         <span v-html="userMessage.message"></span>
+                                        <span v-if="userMessage.is_sending" class="ml-2 text-muted">
+                                            <i class="fas fa-spinner fa-spin text-size-10"></i>
+                                        </span>
                                     </div>
+                                    
                                     <div class="chat-date">
                                         <span class="text-muted">{{ moment(userMessage.created_at).format(momentFormattingString) }}</span>
                                     </div>
@@ -204,8 +221,8 @@
                             <div class="d-flex justify-content-center">
                                 <template v-for="(avatar, i) in findUser(userInfo.groupMembers)">
                                     <app-avatar v-if="i < 4" :key="`detail-group-avatar-${avatar.id}`"
-                                            :img="avatar.profile_picture ? urlGenerator(avatar.profile_picture.path) : avatar.profile_picture"
-                                            class="mr-1" :title="avatar.full_name"/> 
+                                                    :img="avatar.profile_picture ? urlGenerator(avatar.profile_picture.path) : avatar.profile_picture"
+                                                    class="mr-1" :title="avatar.full_name"/> 
                                 </template>
                             </div>
                     </div>
@@ -271,9 +288,8 @@ export default {
             contactList: [],
             userMessageLists: [],
             loadingMessages: false,
-            userInfo: {}, // OBJETO ACTIVO
+            userInfo: {}, 
             
-            // NUEVOS DATOS PARA COLAPSAR
             isGroupsOpen: true,
             isDirectOpen: true,
 
@@ -281,26 +297,33 @@ export default {
             fileUploadUrl: '',
             urlGenerator,
             newGroup: { name: '', members: [] },
-            unreadCounts: {}, // Object to store unread counts by contact id
+            unreadCounts: {}, 
             emojiList: [
                 {id: 1, code: '&#9994;'}, {id: 2, code: '&#9995;'}, {id: 3, code: '&#9996;'}, {id: 4, code: '&#128074;'},
                 {id: 5, code: '&#128076;'}, {id: 6, code: '&#128077;'}, {id: 7, code: '&#128078;'}, {id: 8, code: '&#128079;'},
                 {id: 9, code: '&#128148;'}, {id: 10, code: '&#128149;'}, {id: 11, code: '&#128150;'}, {id: 12, code: '&#128153;'},
             ],
+            // URL para el sonido de notificación
+            notificationSoundUrl: 'https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3'
         }
     },
     computed: {
-        // Filtro general
         allVisibleContacts() {
-            return this.contactList.filter(item => 
+            let contacts = this.contactList.filter(item => 
                 item.full_name.toLowerCase().includes(this.searchContact.toLowerCase())
             );
+
+            return contacts.sort((a, b) => {
+                const countA = this.unreadCounts[a.id] || 0;
+                const countB = this.unreadCounts[b.id] || 0;
+                if (countA > 0 && countB === 0) return -1;
+                if (countA === 0 && countB > 0) return 1;
+                return 0; 
+            });
         },
-        // Filtro solo grupos
         filteredGroups() {
             return this.allVisibleContacts.filter(c => c.type === 'group');
         },
-        // Filtro solo usuarios
         filteredUsers() {
             return this.allVisibleContacts.filter(c => c.type !== 'group');
         }
@@ -308,7 +331,6 @@ export default {
     watch: {
         'contactList.length': {
             handler: function (length) {
-                // Al cargar la lista, seleccionamos el primero si existe
                 if (this.contactList.length > 0 && !this.userInfo.id) {
                     this.changeActive(this.contactList[0]);
                 }
@@ -340,9 +362,7 @@ export default {
             }
         },
         
-        // --- CAMBIO DE CHAT ---
         changeActive(user) {
-            // Si ya estoy en este chat, no hago nada (evita recargas innecesarias)
             if (this.userInfo.id === user.id) return;
 
             this.userInfo = user;
@@ -353,7 +373,6 @@ export default {
         async markMessagesAsRead(contactId) {
             try {
                 await axios.post(`messages/${contactId}/mark-as-read`);
-                // Update unread count
                 if (this.unreadCounts[contactId]) {
                     this.unreadCounts[contactId] = 0;
                 }
@@ -364,20 +383,62 @@ export default {
         },
 
         setEmoji(code) {
-            this.messageText += code; // Corregido para agregar al texto existente
+            this.messageText += code; 
         },
+
+        // --- MÉTODO PARA REPRODUCIR SONIDO ---
+        playNotificationSound() {
+            const audio = new Audio(this.notificationSoundUrl);
+            audio.play().catch(error => {
+                console.log("Audio play prevented by browser policy", error);
+            });
+        },
+
+        // --- HELPER PARA MENSAJE OPTIMISTA ---
+        createTempMessage(content, type = 'text', fileData = null) {
+            // Nota: El ID del usuario temporal NO debe coincidir con userInfo.id (el partner)
+            // para que el chat lo renderice a la derecha (lado "mío").
+            return {
+                temp_id: 'temp_' + Date.now(),
+                message: type === 'text' ? content : null,
+                created_at: moment().toISOString(),
+                user: { id: 'me' }, // ID ficticio para forzar alineación derecha
+                attachments: fileData ? [fileData] : [],
+                is_sending: true // Flag para UI de carga
+            };
+        },
+
         sendMessage() {
             if (this.messageText.length) {
+                // 1. Mostrar mensaje inmediatamente (Optimistic UI)
+                const tempMsg = this.createTempMessage(this.messageText, 'text');
+                this.userMessageLists.push(tempMsg);
+                
+                // Forzar scroll abajo
+                this.$nextTick(() => {
+                    const container = this.$el.querySelector('.message-body');
+                    if (container) container.scrollTop = container.scrollHeight;
+                });
+
+                // 2. Preparar envío real
                 let formData = {
                     message: this.messageText,
                     receiver_id: this.userInfo.id
                 };
                 if(this.userInfo.type === 'group') formData.is_group = true;
                 
+                // Limpiar input inmediatamente
+                this.messageText = '';
+
                 this.submitFromFixin('post', `messages`, formData)
             }
         },
+        
         sendActiveEmoji() {
+             // Optimistic Emoji
+            const tempMsg = this.createTempMessage(this.activeEmoji, 'text');
+            this.userMessageLists.push(tempMsg);
+
             let formData = {
                 message: this.activeEmoji,
                 receiver_id: this.userInfo.id
@@ -385,27 +446,53 @@ export default {
             if(this.userInfo.type === 'group') formData.is_group = true;
             this.submitFromFixin('post', `messages`, formData)
         },
+        
         sendImage(event) {
-            const file = event.target.files[0]
-            this.file_upload = file
+            const file = event.target.files[0];
+            if (!file) return;
+
+            this.file_upload = file;
+            
+            // 1. Previsualización inmediata de imagen (Optimistic UI)
+            const objectUrl = URL.createObjectURL(file);
+            const tempAttachment = {
+                path: objectUrl,
+                original_filename: file.name,
+                is_local: true // Flag para no usar urlGenerator
+            };
+            const tempMsg = this.createTempMessage(null, 'file', tempAttachment);
+            this.userMessageLists.push(tempMsg);
+
+            // Scroll abajo
+            this.$nextTick(() => {
+                const container = this.$el.querySelector('.message-body');
+                if (container) container.scrollTop = container.scrollHeight;
+            });
+
+            // 2. Envio Real
             let formData = new FormData();
             formData.append('receiver_id', this.userInfo.id);
             formData.append('file_upload', this.file_upload);
             if(this.userInfo.type === 'group') formData.append('is_group', true);
             
+            // Reset input file
+            event.target.value = null;
+
             this.submitFromFixin('post', `messages`, formData)
         },
+        
         afterSuccess(response) {
-            this.messageText = '';
             this.file_upload = '';
             let receiverId = response.data.message ? response.data.message.receiver_id : this.userInfo.id;
             if (response.data.message && response.data.message.chat_group_id) {
                 receiverId = response.data.message.chat_group_id;
             }
+            // Al recargar los mensajes, el "temp" se reemplazará por el real
             this.getUserMessages(receiverId);
         },
+        
         selectEmoji(event, emoji) {
-             this.messageText += emoji.code; // Corregido
+             this.messageText += emoji.code; 
         },
         async getAllUser() {
             try {
@@ -420,46 +507,31 @@ export default {
         async getUnreadCounts() {
             try {
                 const response = await axios.get('messages-unread-count');
-                // Replace the entire object to avoid stale counts
                 const newUnreadCounts = {};
                 response.data.by_sender.forEach(item => {
                     newUnreadCounts[item.id] = item.count;
                 });
                 this.unreadCounts = newUnreadCounts;
-                // Emit event to update navbar notification
                 this.$root.$emit('chat-unread-count', response.data.total);
             } catch (error) {
                 console.error("Error loading unread counts", error);
             }
         },
 
-        // --- SOLUCIÓN AL "MEZCLADO" DE CHATS (RACE CONDITION FIX) ---
         async getUserMessages(id) {
-            // 1. Limpiar visualmente
-            this.userMessageLists = []; 
             this.loadingMessages = true;
-
-            // 2. Guardar el ID que estamos pidiendo AHORA MISMO
             const requestedId = id;
-
             let isGroup = this.userInfo && this.userInfo.type === 'group';
             
             try {
                 const response = await axios.get(`user-messages/${id}?is_group=${isGroup}`);
                 
-                // 3. VALIDACIÓN CRÍTICA:
-                // Solo asignamos los mensajes si el usuario TODAVÍA tiene seleccionado
-                // el mismo chat que solicitamos. Si cambió a otro, descartamos esto.
                 if (this.userInfo.id === requestedId) {
                     this.userMessageLists = response.data;
-                } else {
-                    console.log("Respuesta descartada: El usuario cambió de chat.");
-                }
-
+                } 
             } catch (error) {
                 console.error("Error loading messages", error);
             } finally {
-                // Solo quitamos el loader si seguimos en el mismo chat
                 if (this.userInfo.id === requestedId) {
                     this.loadingMessages = false;
                 }
@@ -471,22 +543,29 @@ export default {
             Echo.private(`chat.${user.id}`)
                 .listen('ChatEvent', (e) => {
                     let isCurrentChat = false;
+                    let senderId = e.message.sender_id;
+
                     // Lógica para detectar si el mensaje entrante pertenece al chat abierto
                     if (e.message.chat_group_id) {
                          if (this.userInfo.type === 'group' && this.userInfo.id === e.message.chat_group_id) {
                              isCurrentChat = true;
                          }
                     } else {
-                        if (this.userInfo && (this.userInfo.id === e.message.sender_id || this.userInfo.id === e.message.receiver_id)) {
+                        if (this.userInfo && (this.userInfo.id === senderId || this.userInfo.id === e.message.receiver_id)) {
                              isCurrentChat = true;
                         }
                     }
 
+                    // --- REPRODUCIR SONIDO SI NO SOY YO EL QUE ENVIÓ EL MENSAJE ---
+                    // Asumimos que 'user.id' es el ID del usuario logueado
+                    if (senderId !== user.id) {
+                        this.playNotificationSound();
+                    }
+
                     if (isCurrentChat) {
-                       this.getUserMessages(this.userInfo.id);
+                        this.getUserMessages(this.userInfo.id);
                     }
                     
-                    // Always refresh unread counts when new message arrives
                     this.getUnreadCounts();
                 });
         }
@@ -498,14 +577,13 @@ export default {
 </script>
 
 <style lang="scss">
-/* Estilos para las cabeceras colapsables */
 .contact-category-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 10px 15px;
     cursor: pointer;
-    background-color: #f8f9fa; /* Gris muy suave */
+    background-color: #f8f9fa;
     border-radius: 4px;
     margin-bottom: 5px;
     transition: background-color 0.2s;
@@ -518,7 +596,7 @@ export default {
 
 .custom-scrollbar {
     overflow-y: auto;
-    max-height: calc(100vh - 200px); /* Ajusta esto según tu header */
+    max-height: calc(100vh - 200px);
 }
 
 .attached-file-options {
@@ -539,6 +617,7 @@ export default {
     display: inline-block;
     margin-right: 10px;
     margin-bottom: 10px;
+    position: relative; /* Para posicionar el spinner */
 }
 .chat-attachment-name {
     max-width: 150px;
@@ -553,7 +632,6 @@ export default {
 }
 .chat-avatar-group {
     position: relative;
-    .avatars-group-container {}
 }
 .contact {
     position: relative;
@@ -563,5 +641,23 @@ export default {
         position: absolute;
         right: 10px;
     }
+}
+
+/* --- ESTILOS PARA ESTADO DE CARGA/ENVIO --- */
+.message.sending {
+    opacity: 0.7; /* El mensaje se ve un poco más transparente */
+}
+
+.image-sending-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 4px;
 }
 </style>

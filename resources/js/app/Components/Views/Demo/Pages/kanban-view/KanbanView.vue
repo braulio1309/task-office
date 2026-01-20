@@ -23,7 +23,7 @@
                                        @change="changedPosition($event, stage.id)"
                                        group="deals">
                                 <div class="card card-with-shadow mb-2 border-0 draggable-item"
-                                     v-for="(element, index) in stage['tasks']"
+                                     v-for="(element, index) in stage['calendars']"
                                      :key="index">
                                     <div class="card-body font-size-90">
                                         <div class="row">

@@ -14,7 +14,7 @@ return new class extends Migration
     public function up()
     {
         // 1. Tabla de Grupos
-        Schema::create('chat_groups', function (Blueprint $table) {
+       /* Schema::create('chat_groups', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->foreignId('created_by')->constrained('users');
@@ -27,7 +27,7 @@ return new class extends Migration
             $table->foreignId('chat_group_id')->constrained('chat_groups')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
-        });
+        });*/
 
     }
 
