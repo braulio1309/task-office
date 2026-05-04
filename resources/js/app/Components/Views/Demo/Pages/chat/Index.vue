@@ -3,205 +3,218 @@
         <app-breadcrumb :page-title="$t('chat')"/>
 
         <div class="chat-wrapper">
+            <!-- ═══════════════════════════ LEFT SIDEBAR ═══════════════════════════ -->
             <div class="chat-contacts">
+                <!-- Search + New Group button -->
                 <div class="search-contact">
                     <div class="search-input-group">
                         <app-icon name="search" class="size-17 search-icon"/>
                         <input type="text"
                                v-model="searchContact"
                                class="form-control search-contact-input"
-                               placeholder="Search contact">
+                               :placeholder="$t('search') || 'Buscar…'">
                     </div>
-                    <button class="btn btn-primary btn-sm ml-2" @click="openGroupModal" title="Crear Grupo">
+                    <button class="btn btn-primary btn-sm ml-2"
+                            @click="openGroupModal"
+                            title="Crear Grupo">
                         <app-icon name="plus" class="size-15"/>
                     </button>
                 </div>
 
                 <div class="contact-list custom-scrollbar">
-                    
-                    <div class="contact-category-header" @click="isGroupsOpen = !isGroupsOpen">
-                        <span class="text-muted font-weight-bold text-uppercase text-size-12">
-                            Grupos ({{ filteredGroups.length }})
-                        </span>
-                        <app-icon :name="isGroupsOpen ? 'chevron-down' : 'chevron-right'" class="size-14 text-muted"/>
-                    </div>
 
-                    <div v-show="isGroupsOpen">
-                        <template v-for="contact in filteredGroups">
-                            <a class="contact"
-                               :class="{'active': userInfo.id === contact.id}"
-                               @click.prevent="changeActive(contact)">
-                                <div class="contact-icon">
-                                    <div class="chat-avatar-group">
-                                        <div class="avatars-group-container d-flex">
-                                            <template v-for="(avatar, i) in findUser(contact.groupMembers)">
-                                                <app-avatar
-                                                    v-if="i < 2"
-                                                    :key="`group-avatar-${avatar.id}`"
-                                                    :img="avatar.profile_picture ? urlGenerator(avatar.profile_picture.path) : avatar.profile_picture"
-                                                    class="mr-1"
-                                                    style="width: 25px; height: 25px;"
-                                                /> 
-                                            </template>
-                                            <span v-if="contact.groupMembers.length > 2" class="badge badge-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 25px; height: 25px;">
-                                                +{{ contact.groupMembers.length - 2 }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="contact-info">
-                                    <p class="mb-0">{{ contact.full_name }}</p>
-                                </div>
-                                <span v-if="unreadCounts[contact.id] > 0" class="badge badge-danger badge-pill ml-auto">
-                                    {{ unreadCounts[contact.id] }}
-                                </span>
-                            </a>
-                        </template>
-                        <div v-if="filteredGroups.length === 0" class="p-2 text-center text-muted text-size-12">
-                            No hay grupos
+                    <!-- ── Chats recientes ── -->
+                    <template v-if="recentContacts.length > 0">
+                        <div class="contact-category-header" @click="isRecentOpen = !isRecentOpen">
+                            <span class="text-muted font-weight-bold text-uppercase text-size-12">
+                                Chats recientes ({{ recentContacts.length }})
+                            </span>
+                            <app-icon :name="isRecentOpen ? 'chevron-down' : 'chevron-right'" class="size-14 text-muted"/>
                         </div>
-                    </div>
 
-                    <div class="contact-category-header mt-2" @click="isDirectOpen = !isDirectOpen">
-                        <span class="text-muted font-weight-bold text-uppercase text-size-12">
-                            Mensajes Directos ({{ filteredUsers.length }})
-                        </span>
-                        <app-icon :name="isDirectOpen ? 'chevron-down' : 'chevron-right'" class="size-14 text-muted"/>
-                    </div>
-
-                    <div v-show="isDirectOpen">
-                        <template v-for="contact in filteredUsers">
-                            <a class="contact"
-                               :class="{'active': userInfo.id === contact.id}"
+                        <div v-show="isRecentOpen">
+                            <a v-for="contact in recentContacts"
+                               :key="`recent-${contact.type}-${contact.id}`"
+                               class="contact"
+                               :class="{'active': activeContact && activeContact.id === contact.id && activeContact.type === contact.type}"
                                @click.prevent="changeActive(contact)">
-                                <div class="contact-icon">
-                                    <div class="avatars-w-40">
-                                        <app-avatar :alt-text="contact.full_name"
-                                                    :img="contact.profile_picture ?
-                                                        urlGenerator(contact.profile_picture.path) :
-                                                        contact.profile_picture"
-                                                    :shadow="true"
-                                                    :title="contact.full_name"/>
-                                    </div>
-                                </div>
+                                <contact-icon :contact="contact" :contact-list="contactList" :url-generator="urlGenerator"/>
                                 <div class="contact-info">
-                                    <p class="mb-0">{{ contact.full_name }}</p>
+                                    <p class="mb-0 font-weight-semibold">{{ contact.full_name }}</p>
+                                    <small class="text-muted text-truncate d-block" style="max-width:140px" v-if="contact.last_message">
+                                        {{ contact.last_message }}
+                                    </small>
                                 </div>
-                                <span v-if="unreadCounts[contact.id] > 0" class="badge badge-danger badge-pill ml-auto">
+                                <span v-if="unreadCounts[contact.id] > 0"
+                                      class="badge badge-danger badge-pill ml-auto">
                                     {{ unreadCounts[contact.id] }}
                                 </span>
                             </a>
-                        </template>
-                         <div v-if="filteredUsers.length === 0" class="p-2 text-center text-muted text-size-12">
-                            No hay usuarios
+                        </div>
+                    </template>
+
+                    <!-- ── Todos los contactos ── -->
+                    <div class="contact-category-header mt-2" @click="isContactsOpen = !isContactsOpen">
+                        <span class="text-muted font-weight-bold text-uppercase text-size-12">
+                            Contactos ({{ filteredNewContacts.length }})
+                        </span>
+                        <app-icon :name="isContactsOpen ? 'chevron-down' : 'chevron-right'" class="size-14 text-muted"/>
+                    </div>
+
+                    <div v-show="isContactsOpen">
+                        <a v-for="contact in filteredNewContacts"
+                           :key="`contact-${contact.type}-${contact.id}`"
+                           class="contact"
+                           :class="{'active': activeContact && activeContact.id === contact.id && activeContact.type === contact.type}"
+                           @click.prevent="changeActive(contact)">
+                            <contact-icon :contact="contact" :contact-list="contactList" :url-generator="urlGenerator"/>
+                            <div class="contact-info">
+                                <p class="mb-0">{{ contact.full_name }}</p>
+                                <small v-if="contact.type === 'group'" class="text-muted text-size-11">
+                                    {{ (contact.groupMembers || []).length }} miembros
+                                </small>
+                            </div>
+                            <span v-if="unreadCounts[contact.id] > 0"
+                                  class="badge badge-danger badge-pill ml-auto">
+                                {{ unreadCounts[contact.id] }}
+                            </span>
+                        </a>
+                        <div v-if="filteredNewContacts.length === 0" class="p-2 text-center text-muted text-size-12">
+                            No hay contactos
                         </div>
                     </div>
 
                 </div>
             </div>
 
+            <!-- ═══════════════════════════ CHAT AREA ═════════════════════════════ -->
             <div class="chat-messages">
-                <div class="h-100 d-flex flex-column" v-if="userInfo && userInfo.id">
-                    
+                <div class="h-100 d-flex flex-column" v-if="activeContact && activeContact.id">
+
+                    <!-- Header -->
                     <div class="message-header">
                         <div class="contact-title">
-                            <h4 class="mb-0">{{ userInfo.full_name }}</h4>
+                            <h4 class="mb-0">{{ activeContact.full_name }}</h4>
                         </div>
                         <div class="contact-user">
-                            <div v-if="userInfo.type === 'group'" class="d-flex align-items-center">
-                                    <template v-for="(avatar, i) in findUser(userInfo.groupMembers)">
+                            <div v-if="activeContact.type === 'group'" class="d-flex align-items-center">
+                                <template v-for="(avatar, i) in findUsers(activeContact.groupMembers)">
                                     <app-avatar v-if="i < 3"
-                                                :key="`header-group-avatar-${avatar.id}`"
-                                                :img="avatar.profile_picture ? urlGenerator(avatar.profile_picture.path) : avatar.profile_picture"
+                                                :key="`header-avatar-${avatar.id}`"
+                                                :img="avatar.profile_picture ? urlGenerator(avatar.profile_picture.path) : null"
                                                 class="ml-n2 border border-white rounded-circle"
-                                                :title="avatar.full_name"/> 
+                                                :title="avatar.full_name"/>
                                 </template>
                             </div>
                             <div class="avatars-w-40" v-else>
-                                <app-avatar :alt-text="userInfo.full_name"
-                                            :img="userInfo.profile_picture ? urlGenerator(userInfo.profile_picture.path) : userInfo.profile_picture"
+                                <app-avatar :alt-text="activeContact.full_name"
+                                            :img="activeContact.profile_picture ? urlGenerator(activeContact.profile_picture.path) : null"
                                             :shadow="true"
-                                            :title="userInfo.full_name"/>
+                                            :title="activeContact.full_name"/>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Messages body -->
                     <div class="message-body" v-chat-scroll>
-                        <div v-if="loadingMessages" class="d-flex h-100 justify-content-center align-items-center flex-column">
+                        <div v-if="loadingMessages"
+                             class="d-flex h-100 justify-content-center align-items-center">
                             <div class="spinner-border text-primary" role="status">
-                                <span class="sr-only">Loading...</span>
+                                <span class="sr-only">Cargando…</span>
                             </div>
                         </div>
 
                         <template v-else>
-                            <div v-if="userMessageLists.length === 0" class="d-flex h-100 justify-content-center align-items-center">
-                                <p class="text-muted">No hay mensajes aún.</p>
+                            <div v-if="userMessageLists.length === 0"
+                                 class="d-flex h-100 justify-content-center align-items-center">
+                                <p class="text-muted">No hay mensajes aún. ¡Sé el primero en escribir!</p>
                             </div>
-                            <template v-for="userMessage in userMessageLists">
-                                <div class="message" 
-                                     :class="{
-                                         'reply-message': userInfo.id === userMessage.user.id,
-                                         'sending': userMessage.is_sending
-                                     }"
-                                     :key="userMessage.id || userMessage.temp_id"> 
-                                    
-                                    <div class="avatars-w-40" v-if="userMessage.user">
-                                        <app-avatar :alt-text="userMessage.user.full_name"
-                                                    :img="userMessage.user.profile_picture ? urlGenerator(userMessage.user.profile_picture.path) : userMessage.user.profile_picture"
-                                                    :shadow="true"
-                                                    :title="userMessage.user.full_name"/>
-                                    </div>
-                                    
-                                    <template v-if="userMessage.attachments.length">
-                                        <div class="chat-attachment" v-for="attachment in userMessage.attachments" :key="attachment.id || 'temp-att'">
-                                            <img class="chat-message-image img-thumbnail"
-                                                 :src="attachment.is_local ? attachment.path : `${urlGenerator(attachment.path)}`" 
-                                                 alt="Image"/>
-                                            
-                                            <div v-if="userMessage.is_sending" class="image-sending-overlay">
-                                                <div class="spinner-border text-light spinner-border-sm" role="status"></div>
-                                            </div>
 
-                                            <div class="chat-attachment-name text-muted text-size-12 mt-1" v-if="attachment.original_filename">
-                                                <app-icon name="paperclip" class="size-12"/>
-                                                {{ attachment.original_filename }}
-                                            </div>
-                                        </div>
-                                    </template>
-                                    
-                                    <div class="text" v-if="userMessage.message">
-                                        <span v-html="userMessage.message"></span>
-                                        <span v-if="userMessage.is_sending" class="ml-2 text-muted">
-                                            <i class="fas fa-spinner fa-spin text-size-10"></i>
-                                        </span>
-                                    </div>
-                                    
-                                    <div class="chat-date">
-                                        <span class="text-muted">{{ moment(userMessage.created_at).format(momentFormattingString) }}</span>
-                                    </div>
+                            <div v-for="msg in userMessageLists"
+                                 :key="msg.id || msg.temp_id"
+                                 class="message"
+                                 :class="{
+                                     'reply-message': isMine(msg),
+                                     'sending': msg.is_sending
+                                 }">
+
+                                <div class="avatars-w-40" v-if="msg.user">
+                                    <app-avatar :alt-text="msg.user.full_name"
+                                                :img="msg.user.profile_picture ? urlGenerator(msg.user.profile_picture.path) : null"
+                                                :shadow="true"
+                                                :title="msg.user.full_name"/>
                                 </div>
-                            </template>
+
+                                <!-- Attachments -->
+                                <template v-if="msg.attachments && msg.attachments.length">
+                                    <div v-for="att in msg.attachments"
+                                         :key="att.id || 'tmp'"
+                                         class="chat-attachment">
+                                        <img class="chat-message-image img-thumbnail"
+                                             :src="att.is_local ? att.path : urlGenerator(att.path)"
+                                             alt="Imagen adjunta"/>
+                                        <div v-if="msg.is_sending" class="image-sending-overlay">
+                                            <div class="spinner-border text-light spinner-border-sm" role="status"></div>
+                                        </div>
+                                        <div class="chat-attachment-name text-muted text-size-12 mt-1"
+                                             v-if="att.original_filename">
+                                            <app-icon name="paperclip" class="size-12"/>
+                                            {{ att.original_filename }}
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Text -->
+                                <div class="text" v-if="msg.message">
+                                    <span v-html="msg.message"></span>
+                                    <span v-if="msg.is_sending" class="ml-2 text-muted">
+                                        <i class="fas fa-spinner fa-spin text-size-10"></i>
+                                    </span>
+                                </div>
+
+                                <div class="chat-date">
+                                    <span class="text-muted">{{ moment(msg.created_at).format(momentFormattingString) }}</span>
+                                </div>
+                            </div>
                         </template>
                     </div>
 
+                    <!-- Message input -->
                     <div class="message-editor">
                         <div class="attached-file-options">
-                            <input type="file" class="image-input cursor-pointer" @change="sendImage($event)" :id="`chat-image-upload-${userInfo.id}`"/>
-                            <span class="option p-1 text-primary"><app-icon name="paperclip" class="size-18"/></span>
+                            <label :for="`chat-file-${activeContact.id}`" class="option p-1 text-primary mb-0" style="cursor:pointer">
+                                <app-icon name="paperclip" class="size-18"/>
+                            </label>
+                            <input type="file"
+                                   class="d-none"
+                                   :id="`chat-file-${activeContact.id}`"
+                                   @change="sendImage($event)"/>
                         </div>
                         <div class="message-input">
                             <div class="message-input-group">
-                                <input type="text" class="form-control" v-model="messageText" data-emojiable="true" @keyup.enter="sendMessage()" placeholder="Type something here...">
+                                <input type="text"
+                                       class="form-control"
+                                       v-model="messageText"
+                                       @keyup.enter="sendMessage()"
+                                       placeholder="Escribe un mensaje…">
                                 <div class="message-input-append">
+                                    <!-- Emoji picker -->
                                     <div class="btn-group dropdown-emoji">
-                                        <button type="button" class="btn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <button type="button" class="btn" data-toggle="dropdown">
                                             <app-icon name="smile" class="size-15"/>
                                         </button>
                                         <div class="dropdown-menu dropdown-menu-right">
-                                            <a href="#" v-for="emoji in emojiList" class="emoji" @click.prevent="selectEmoji($event, emoji)" v-html="emoji.code"></a>
+                                            <a href="#" v-for="emoji in emojiList"
+                                               class="emoji"
+                                               @click.prevent="messageText += emoji.code"
+                                               v-html="emoji.code"
+                                               :key="emoji.id"></a>
                                         </div>
                                     </div>
-                                    <a href="#" :class="{'disabled': !messageText, 'text-primary': messageText}" class="btn btn-send" @click.prevent="sendMessage()">
+                                    <a href="#"
+                                       :class="{'disabled': !messageText, 'text-primary': messageText}"
+                                       class="btn btn-send"
+                                       @click.prevent="sendMessage()">
                                         <app-icon name="send" class="size-15"/>
                                     </a>
                                 </div>
@@ -210,58 +223,82 @@
                     </div>
                 </div>
 
+                <!-- Empty state -->
                 <div v-else class="h-100 d-flex justify-content-center align-items-center">
                     <p class="text-muted">Selecciona un chat para comenzar</p>
                 </div>
             </div>
-            
-            <div class="chat-contact-details" v-if="userInfo && userInfo.id">
+
+            <!-- ═══════════════════════════ RIGHT DETAIL ══════════════════════════ -->
+            <div class="chat-contact-details" v-if="activeContact && activeContact.id">
                 <div class="d-flex flex-column align-items-center">
-                    <div v-if="userInfo.type === 'group'" class="chat-avatar-group mb-2">
-                            <div class="d-flex justify-content-center">
-                                <template v-for="(avatar, i) in findUser(userInfo.groupMembers)">
-                                    <app-avatar v-if="i < 4" :key="`detail-group-avatar-${avatar.id}`"
-                                                    :img="avatar.profile_picture ? urlGenerator(avatar.profile_picture.path) : avatar.profile_picture"
-                                                    class="mr-1" :title="avatar.full_name"/> 
-                                </template>
-                            </div>
+                    <div v-if="activeContact.type === 'group'" class="mb-2">
+                        <div class="d-flex justify-content-center flex-wrap">
+                            <template v-for="(avatar, i) in findUsers(activeContact.groupMembers)">
+                                <app-avatar v-if="i < 4"
+                                            :key="`detail-avatar-${avatar.id}`"
+                                            :img="avatar.profile_picture ? urlGenerator(avatar.profile_picture.path) : null"
+                                            class="mr-1 mb-1"
+                                            :title="avatar.full_name"/>
+                            </template>
+                        </div>
                     </div>
                     <div class="avatars-w-40" v-else>
-                        <app-avatar :alt-text="userInfo.full_name"
-                                    :img="userInfo.profile_picture ? urlGenerator(userInfo.profile_picture.path) : userInfo.profile_picture"
-                                    :shadow="true" :title="userInfo.full_name"/>
+                        <app-avatar :alt-text="activeContact.full_name"
+                                    :img="activeContact.profile_picture ? urlGenerator(activeContact.profile_picture.path) : null"
+                                    :shadow="true"
+                                    :title="activeContact.full_name"/>
                     </div>
-                    <p class="mt-2 mb-0 font-weight-bold">{{ userInfo.full_name }}</p>
-                    <small v-if="userInfo.type === 'group'" class="text-muted">{{ userInfo.groupMembers.length }} Miembros</small>
+                    <p class="mt-2 mb-0 font-weight-bold text-center">{{ activeContact.full_name }}</p>
+                    <small v-if="activeContact.type === 'group'" class="text-muted">
+                        {{ (activeContact.groupMembers || []).length }} Miembros
+                    </small>
+                    <small v-else class="text-muted">{{ activeContact.email }}</small>
                 </div>
             </div>
         </div>
 
+        <!-- ═══════════════════════════ CREATE GROUP MODAL ════════════════════════ -->
         <div class="modal fade" id="createGroupModal" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">Crear Nuevo Grupo</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
                     </div>
                     <div class="modal-body">
                         <div class="form-group">
                             <label>Nombre del Grupo</label>
-                            <input type="text" class="form-control" v-model="newGroup.name" placeholder="Ej: Equipo de Ventas">
+                            <input type="text" class="form-control" v-model="newGroup.name"
+                                   placeholder="Ej: Equipo de Ventas">
                         </div>
                         <div class="form-group">
                             <label>Seleccionar Miembros</label>
-                            <div class="users-list-scroll" style="max-height: 200px; overflow-y: auto;">
-                                <div v-for="user in contactList" :key="`select-user-${user.id}`" v-if="user.type !== 'group'" class="custom-control custom-checkbox mb-2">
-                                    <input type="checkbox" class="custom-control-input" :id="`user-check-${user.id}`" :value="user.id" v-model="newGroup.members">
-                                    <label class="custom-control-label d-flex align-items-center" :for="`user-check-${user.id}`"><span class="mr-2">{{ user.full_name }}</span></label>
+                            <div style="max-height:200px; overflow-y:auto;">
+                                <div v-for="user in userContacts"
+                                     :key="`modal-user-${user.id}`"
+                                     class="custom-control custom-checkbox mb-2">
+                                    <input type="checkbox"
+                                           class="custom-control-input"
+                                           :id="`user-check-${user.id}`"
+                                           :value="user.id"
+                                           v-model="newGroup.members">
+                                    <label class="custom-control-label d-flex align-items-center"
+                                           :for="`user-check-${user.id}`">
+                                        {{ user.full_name }}
+                                    </label>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-primary" @click="createGroup" :disabled="!newGroup.name || newGroup.members.length === 0">Crear Grupo</button>
+                        <button type="button"
+                                class="btn btn-primary"
+                                @click="createGroup"
+                                :disabled="!newGroup.name || newGroup.members.length === 0">
+                            Crear Grupo
+                        </button>
                     </div>
                 </div>
             </div>
@@ -275,305 +312,304 @@ import {urlGenerator} from "../../../../../Helpers/AxiosHelper";
 import {FormMixin} from "../../../../../../core/mixins/form/FormMixin";
 import moment from "moment";
 
+// Inline sub-component to render the contact avatar/icon in the sidebar
+const ContactIcon = {
+    name: 'ContactIcon',
+    props: ['contact', 'contactList', 'urlGenerator'],
+    template: `
+        <div class="contact-icon">
+            <template v-if="contact.type === 'group'">
+                <div class="d-flex">
+                    <template v-for="(m, i) in groupMembers">
+                        <app-avatar v-if="i < 2"
+                                    :key="'ci-'+m.id"
+                                    :img="m.profile_picture ? urlGenerator(m.profile_picture.path) : null"
+                                    style="width:25px;height:25px;"
+                                    class="mr-1"/>
+                    </template>
+                    <span v-if="contact.groupMembers && contact.groupMembers.length > 2"
+                          class="badge badge-secondary rounded-circle d-flex align-items-center justify-content-center"
+                          style="width:25px;height:25px;">
+                        +{{ contact.groupMembers.length - 2 }}
+                    </span>
+                </div>
+            </template>
+            <div v-else class="avatars-w-40">
+                <app-avatar :alt-text="contact.full_name"
+                            :img="contact.profile_picture ? urlGenerator(contact.profile_picture.path) : null"
+                            :shadow="true"
+                            :title="contact.full_name"/>
+            </div>
+        </div>
+    `,
+    computed: {
+        groupMembers() {
+            if (!this.contact.groupMembers) return [];
+            return this.contactList.filter(u => this.contact.groupMembers.includes(u.id) && u.type !== 'group');
+        }
+    }
+};
+
 export default {
     name: 'Chat',
     mixins: [FormMixin],
+    components: { ContactIcon },
+
     data() {
         return {
             momentFormattingString: 'hh:mm A DD-MM-YY',
             searchContact: '',
             moment,
             messageText: '',
-            activeEmoji: '&#128077;',
             contactList: [],
             userMessageLists: [],
             loadingMessages: false,
-            userInfo: {}, 
-            
-            isGroupsOpen: true,
-            isDirectOpen: true,
+            activeContact: null,
+
+            isRecentOpen:   true,
+            isContactsOpen: true,
 
             file_upload: '',
-            fileUploadUrl: '',
             urlGenerator,
             newGroup: { name: '', members: [] },
-            unreadCounts: {}, 
+            unreadCounts: {},
             emojiList: [
-                {id: 1, code: '&#9994;'}, {id: 2, code: '&#9995;'}, {id: 3, code: '&#9996;'}, {id: 4, code: '&#128074;'},
-                {id: 5, code: '&#128076;'}, {id: 6, code: '&#128077;'}, {id: 7, code: '&#128078;'}, {id: 8, code: '&#128079;'},
-                {id: 9, code: '&#128148;'}, {id: 10, code: '&#128149;'}, {id: 11, code: '&#128150;'}, {id: 12, code: '&#128153;'},
+                {id: 1, code: '&#9994;'}, {id: 2, code: '&#9995;'}, {id: 3, code: '&#9996;'},
+                {id: 4, code: '&#128074;'}, {id: 5, code: '&#128076;'}, {id: 6, code: '&#128077;'},
+                {id: 7, code: '&#128078;'}, {id: 8, code: '&#128079;'}, {id: 9, code: '&#128148;'},
+                {id: 10, code: '&#128149;'}, {id: 11, code: '&#128150;'}, {id: 12, code: '&#128153;'},
             ],
-            // URL para el sonido de notificación
-            notificationSoundUrl: 'https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3'
-        }
+        };
     },
-    computed: {
-        allVisibleContacts() {
-            let contacts = this.contactList.filter(item => 
-                item.full_name.toLowerCase().includes(this.searchContact.toLowerCase())
-            );
 
-            return contacts.sort((a, b) => {
-                const countA = this.unreadCounts[a.id] || 0;
-                const countB = this.unreadCounts[b.id] || 0;
-                if (countA > 0 && countB === 0) return -1;
-                if (countA === 0 && countB > 0) return 1;
-                return 0; 
-            });
+    computed: {
+        /** All user-type contacts (for group modal member picker) */
+        userContacts() {
+            return this.contactList.filter(c => c.type !== 'group');
         },
-        filteredGroups() {
-            return this.allVisibleContacts.filter(c => c.type === 'group');
+
+        /** Contacts with whom at least one message has been exchanged, sorted by recency */
+        recentContacts() {
+            return this.contactList
+                .filter(c => c.has_messages)
+                .filter(c => c.full_name.toLowerCase().includes(this.searchContact.toLowerCase()))
+                .sort((a, b) => {
+                    const unreadDiff = (this.unreadCounts[b.id] || 0) - (this.unreadCounts[a.id] || 0);
+                    if (unreadDiff !== 0) return unreadDiff;
+                    const ta = a.last_message_at ? new Date(a.last_message_at) : 0;
+                    const tb = b.last_message_at ? new Date(b.last_message_at) : 0;
+                    return tb - ta;
+                });
         },
-        filteredUsers() {
-            return this.allVisibleContacts.filter(c => c.type !== 'group');
-        }
+
+        /** Contacts with no message history yet (includes groups without messages) */
+        filteredNewContacts() {
+            return this.contactList
+                .filter(c => !c.has_messages)
+                .filter(c => c.full_name.toLowerCase().includes(this.searchContact.toLowerCase()));
+        },
     },
-    watch: {
-        'contactList.length': {
-            handler: function (length) {
-                if (this.contactList.length > 0 && !this.userInfo.id) {
-                    this.changeActive(this.contactList[0]);
-                }
-            },
-            immediate: true
-        }
-    },
+
     methods: {
-        findUser(userIds) {
+        /** Find user-type contacts by a list of user IDs (for group avatar rendering) */
+        findUsers(userIds) {
             if (!userIds || !Array.isArray(userIds)) return [];
-            return this.contactList.filter(user => userIds.includes(user.id));
+            return this.contactList.filter(u => u.type !== 'group' && userIds.includes(u.id));
         },
+
+        /** Return true if the logged-in user sent this message */
+        isMine(msg) {
+            if (typeof user === 'undefined') return false;
+            return msg.user && (msg.user.id === user.id || msg.user.id === 'me');
+        },
+
         openGroupModal() {
-            this.newGroup.name = '';
-            this.newGroup.members = [];
+            this.newGroup = { name: '', members: [] };
             $('#createGroupModal').modal('show');
         },
+
         async createGroup() {
-            let formData = { name: this.newGroup.name, members: this.newGroup.members };
             try {
-                const response = await axios.post('chat/groups', formData);
+                await axios.post('chat/groups', {
+                    name: this.newGroup.name,
+                    members: this.newGroup.members,
+                });
                 $('#createGroupModal').modal('hide');
-                this.$toastr.s("Grupo creado exitosamente");
-                this.newGroup.name = '';
-                this.newGroup.members = [];
-                await this.getAllUser(); 
+                this.$toastr && this.$toastr.s('Grupo creado exitosamente');
+                await this.getAllUser();
             } catch (error) {
-                this.$toastr.e(error.response?.data?.message || "Error al crear grupo");
+                this.$toastr && this.$toastr.e(error.response?.data?.message || 'Error al crear grupo');
             }
         },
-        
-        changeActive(user) {
-            if (this.userInfo.id === user.id) return;
 
-            this.userInfo = user;
-            this.getUserMessages(user.id);
-            this.markMessagesAsRead(user.id);
+        changeActive(contact) {
+            if (this.activeContact && this.activeContact.id === contact.id && this.activeContact.type === contact.type) return;
+            this.activeContact = contact;
+            this.userMessageLists = [];
+            this.getUserMessages(contact.id);
+            if (contact.type !== 'group') {
+                this.markMessagesAsRead(contact.id);
+            }
         },
 
         async markMessagesAsRead(contactId) {
             try {
                 await axios.post(`messages/${contactId}/mark-as-read`);
-                if (this.unreadCounts[contactId]) {
-                    this.unreadCounts[contactId] = 0;
-                }
+                this.$set(this.unreadCounts, contactId, 0);
                 await this.getUnreadCounts();
-            } catch (error) {
-                console.error("Error marking messages as read", error);
+            } catch (e) {
+                console.error('Error marking as read', e);
             }
         },
 
-        setEmoji(code) {
-            this.messageText += code; 
+        /** Optimistic message builder */
+        createTempMessage(text, type = 'text', fileData = null) {
+            return {
+                temp_id:     'temp_' + Date.now(),
+                message:     type === 'text' ? text : null,
+                created_at:  moment().toISOString(),
+                user:        { id: (typeof user !== 'undefined' ? user.id : 'me') },
+                attachments: fileData ? [fileData] : [],
+                is_sending:  true,
+            };
         },
 
-        // --- MÉTODO PARA REPRODUCIR SONIDO ---
-        playNotificationSound() {
-            const audio = new Audio(this.notificationSoundUrl);
-            audio.play().catch(error => {
-                console.log("Audio play prevented by browser policy", error);
+        scrollToBottom() {
+            this.$nextTick(() => {
+                const el = this.$el.querySelector('.message-body');
+                if (el) el.scrollTop = el.scrollHeight;
             });
         },
 
-        // --- HELPER PARA MENSAJE OPTIMISTA ---
-        createTempMessage(content, type = 'text', fileData = null) {
-            // Nota: El ID del usuario temporal NO debe coincidir con userInfo.id (el partner)
-            // para que el chat lo renderice a la derecha (lado "mío").
-            return {
-                temp_id: 'temp_' + Date.now(),
-                message: type === 'text' ? content : null,
-                created_at: moment().toISOString(),
-                user: { id: 'me' }, // ID ficticio para forzar alineación derecha
-                attachments: fileData ? [fileData] : [],
-                is_sending: true // Flag para UI de carga
-            };
-        },
-
         sendMessage() {
-            if (this.messageText.length) {
-                // 1. Mostrar mensaje inmediatamente (Optimistic UI)
-                const tempMsg = this.createTempMessage(this.messageText, 'text');
-                this.userMessageLists.push(tempMsg);
-                
-                // Forzar scroll abajo
-                this.$nextTick(() => {
-                    const container = this.$el.querySelector('.message-body');
-                    if (container) container.scrollTop = container.scrollHeight;
-                });
+            if (!this.messageText.trim()) return;
 
-                // 2. Preparar envío real
-                let formData = {
-                    message: this.messageText,
-                    receiver_id: this.userInfo.id
-                };
-                if(this.userInfo.type === 'group') formData.is_group = true;
-                
-                // Limpiar input inmediatamente
-                this.messageText = '';
-
-                this.submitFromFixin('post', `messages`, formData)
-            }
-        },
-        
-        sendActiveEmoji() {
-             // Optimistic Emoji
-            const tempMsg = this.createTempMessage(this.activeEmoji, 'text');
+            const tempMsg = this.createTempMessage(this.messageText, 'text');
             this.userMessageLists.push(tempMsg);
+            this.scrollToBottom();
 
-            let formData = {
-                message: this.activeEmoji,
-                receiver_id: this.userInfo.id
+            const formData = {
+                message:     this.messageText,
+                receiver_id: this.activeContact.id,
             };
-            if(this.userInfo.type === 'group') formData.is_group = true;
-            this.submitFromFixin('post', `messages`, formData)
+            if (this.activeContact.type === 'group') formData.is_group = true;
+
+            this.messageText = '';
+            this.submitFromFixin('post', 'messages', formData);
         },
-        
+
         sendImage(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             this.file_upload = file;
-            
-            // 1. Previsualización inmediata de imagen (Optimistic UI)
-            const objectUrl = URL.createObjectURL(file);
-            const tempAttachment = {
-                path: objectUrl,
+
+            const tempMsg = this.createTempMessage(null, 'file', {
+                path:              URL.createObjectURL(file),
                 original_filename: file.name,
-                is_local: true // Flag para no usar urlGenerator
-            };
-            const tempMsg = this.createTempMessage(null, 'file', tempAttachment);
-            this.userMessageLists.push(tempMsg);
-
-            // Scroll abajo
-            this.$nextTick(() => {
-                const container = this.$el.querySelector('.message-body');
-                if (container) container.scrollTop = container.scrollHeight;
+                is_local:          true,
             });
+            this.userMessageLists.push(tempMsg);
+            this.scrollToBottom();
 
-            // 2. Envio Real
-            let formData = new FormData();
-            formData.append('receiver_id', this.userInfo.id);
-            formData.append('file_upload', this.file_upload);
-            if(this.userInfo.type === 'group') formData.append('is_group', true);
-            
-            // Reset input file
+            const formData = new FormData();
+            formData.append('receiver_id', this.activeContact.id);
+            formData.append('file_upload', file);
+            if (this.activeContact.type === 'group') formData.append('is_group', 'true');
+
             event.target.value = null;
-
-            this.submitFromFixin('post', `messages`, formData)
+            this.submitFromFixin('post', 'messages', formData);
         },
-        
+
         afterSuccess(response) {
             this.file_upload = '';
-            let receiverId = response.data.message ? response.data.message.receiver_id : this.userInfo.id;
-            if (response.data.message && response.data.message.chat_group_id) {
-                receiverId = response.data.message.chat_group_id;
+            if (this.activeContact) {
+                this.getUserMessages(this.activeContact.id);
             }
-            // Al recargar los mensajes, el "temp" se reemplazará por el real
-            this.getUserMessages(receiverId);
+            // Refresh sidebar so recent/contact sections stay up-to-date
+            this.getAllUser();
         },
-        
-        selectEmoji(event, emoji) {
-             this.messageText += emoji.code; 
-        },
+
         async getAllUser() {
             try {
                 const response = await axios.get('chat/users');
                 this.contactList = response.data;
                 await this.getUnreadCounts();
-            } catch (error) {
-                console.error("Error loading users/groups", error);
+            } catch (e) {
+                console.error('Error loading contacts', e);
             }
         },
 
         async getUnreadCounts() {
             try {
                 const response = await axios.get('messages-unread-count');
-                const newUnreadCounts = {};
+                const counts = {};
                 response.data.by_sender.forEach(item => {
-                    newUnreadCounts[item.id] = item.count;
+                    counts[item.id] = item.count;
                 });
-                this.unreadCounts = newUnreadCounts;
+                this.unreadCounts = counts;
                 this.$root.$emit('chat-unread-count', response.data.total);
-            } catch (error) {
-                console.error("Error loading unread counts", error);
+            } catch (e) {
+                console.error('Error loading unread counts', e);
             }
         },
 
         async getUserMessages(id) {
             this.loadingMessages = true;
-            const requestedId = id;
-            let isGroup = this.userInfo && this.userInfo.type === 'group';
-            
+            const requestedId    = id;
+            const isGroup        = this.activeContact && this.activeContact.type === 'group';
+
             try {
                 const response = await axios.get(`user-messages/${id}?is_group=${isGroup}`);
-                
-                if (this.userInfo.id === requestedId) {
+                if (this.activeContact && this.activeContact.id === requestedId) {
                     this.userMessageLists = response.data;
-                } 
-            } catch (error) {
-                console.error("Error loading messages", error);
+                }
+            } catch (e) {
+                console.error('Error loading messages', e);
             } finally {
-                if (this.userInfo.id === requestedId) {
+                if (this.activeContact && this.activeContact.id === requestedId) {
                     this.loadingMessages = false;
                 }
             }
-        }
+        },
     },
+
     mounted() {
-        if (typeof user !== 'undefined') {
-            Echo.private(`chat.${user.id}`)
-                .listen('ChatEvent', (e) => {
-                    let isCurrentChat = false;
-                    let senderId = e.message.sender_id;
+        if (typeof user !== 'undefined' && typeof Echo !== 'undefined') {
+            try {
+                Echo.private(`chat.${user.id}`)
+                    .listen('ChatEvent', (e) => {
+                        const senderId = e.message.sender_id;
+                        let isCurrentChat = false;
 
-                    // Lógica para detectar si el mensaje entrante pertenece al chat abierto
-                    if (e.message.chat_group_id) {
-                         if (this.userInfo.type === 'group' && this.userInfo.id === e.message.chat_group_id) {
-                             isCurrentChat = true;
-                         }
-                    } else {
-                        if (this.userInfo && (this.userInfo.id === senderId || this.userInfo.id === e.message.receiver_id)) {
-                             isCurrentChat = true;
+                        if (this.activeContact) {
+                            if (e.message.chat_group_id) {
+                                isCurrentChat = this.activeContact.type === 'group'
+                                    && this.activeContact.id === e.message.chat_group_id;
+                            } else {
+                                isCurrentChat = this.activeContact.type !== 'group'
+                                    && (this.activeContact.id === senderId
+                                        || this.activeContact.id === e.message.receiver_id);
+                            }
                         }
-                    }
 
-                    // --- REPRODUCIR SONIDO SI NO SOY YO EL QUE ENVIÓ EL MENSAJE ---
-                    // Asumimos que 'user.id' es el ID del usuario logueado
-                    if (senderId !== user.id) {
-                        this.playNotificationSound();
-                    }
+                        if (isCurrentChat) {
+                            this.getUserMessages(this.activeContact.id);
+                        }
 
-                    if (isCurrentChat) {
-                        this.getUserMessages(this.userInfo.id);
-                    }
-                    
-                    this.getUnreadCounts();
-                });
+                        this.getUnreadCounts();
+                        this.getAllUser(); // refresh last_message in sidebar
+                    });
+            } catch (e) {
+                console.error('Error setting up Echo', e);
+            }
         }
     },
+
     created() {
         this.getAllUser();
-    }
-}
+    },
+};
 </script>
 
 <style lang="scss">
@@ -581,17 +617,15 @@ export default {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 15px;
+    padding: 8px 15px;
     cursor: pointer;
     background-color: #f8f9fa;
     border-radius: 4px;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     transition: background-color 0.2s;
     user-select: none;
 
-    &:hover {
-        background-color: #e9ecef;
-    }
+    &:hover { background-color: #e9ecef; }
 }
 
 .custom-scrollbar {
@@ -602,59 +636,52 @@ export default {
 .attached-file-options {
     display: flex;
     align-items: center;
-    .image-input {
-        opacity: 0;
-        position: absolute;
-        width: 25px;
-    }
 }
+
 .chat-message-image {
     max-height: 200px;
     max-width: 150px;
     margin-right: 10px;
 }
+
 .chat-attachment {
     display: inline-block;
     margin-right: 10px;
     margin-bottom: 10px;
-    position: relative; /* Para posicionar el spinner */
+    position: relative;
 }
+
 .chat-attachment-name {
     max-width: 150px;
     word-wrap: break-word;
     text-align: center;
 }
+
 .chat-date {
     position: absolute;
     font-size: 0.5rem;
     top: 4.5rem;
     right: 65px;
 }
-.chat-avatar-group {
-    position: relative;
-}
+
 .contact {
     position: relative;
     display: flex;
     align-items: center;
+
     .badge-pill {
         position: absolute;
         right: 10px;
     }
 }
 
-/* --- ESTILOS PARA ESTADO DE CARGA/ENVIO --- */
-.message.sending {
-    opacity: 0.7; /* El mensaje se ve un poco más transparente */
-}
+.message.sending { opacity: 0.7; }
 
 .image-sending-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.3);
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.3);
     display: flex;
     justify-content: center;
     align-items: center;
