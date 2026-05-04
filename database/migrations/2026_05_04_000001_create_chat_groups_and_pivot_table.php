@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 // Runs SECOND: patches the messages table to support group messages
-class UpdateMessagesTableForGroups extends Migration
+class CreateChatGroupsAndPivotTable extends Migration
 {
     public function up()
     {

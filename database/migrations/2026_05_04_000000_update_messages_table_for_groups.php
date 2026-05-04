@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 // Runs FIRST: creates chat_groups and chat_group_users (prerequisite for the messages FK)
-class CreateChatGroupsTables extends Migration
+class UpdateMessagesTableForGroups extends Migration
 {
     public function up()
     {
