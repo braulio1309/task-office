@@ -72,27 +72,34 @@ class MessageController extends Controller
 
     public function store(Request $request)
     {
-        $message = Message::create($request->only('message', 'receiver_id'));
-        if ($request->file_upload) {
-            $file = request()->file('file_upload');
-            $file_path = $this->uploadImage($file, 'chat');
-            
-            // Sanitize the original filename to prevent path traversal and special character issues
-            $originalFilename = $file->getClientOriginalName();
-            $originalFilename = basename($originalFilename); // Remove any path components
-            $originalFilename = preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalFilename); // Replace special chars
+        $isGroup = $request->boolean('is_group');
 
-            $message->attachments()->updateOrCreate([
-                'message_id' => $message->id,
-                'path' => $file_path,
-                'original_filename' => $originalFilename
+        $data = [
+            'message'       => $request->input('message'),
+            'sender_id'     => auth()->id(),
+            'receiver_id'   => $isGroup ? null : $request->input('receiver_id'),
+            'chat_group_id' => $isGroup ? $request->input('receiver_id') : null,
+        ];
+
+        $message = Message::create($data);
+
+        if ($request->hasFile('file_upload')) {
+            $file = $request->file('file_upload');
+            $file_path = $this->uploadImage($file, 'chat');
+
+            $originalFilename = basename($file->getClientOriginalName());
+            $originalFilename = preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalFilename);
+
+            $message->attachments()->create([
+                'message_id'        => $message->id,
+                'path'              => $file_path,
+                'original_filename' => $originalFilename,
             ]);
         }
-//        event(new ChatEvent($request->message, $user));
 
-            broadcast(new ChatEvent($message));
+        broadcast(new ChatEvent($message));
 
-        return created_responses('send', ['message' => $message]);
+        return created_responses('send', ['message' => $message->load('attachments')]);
     }
 
 

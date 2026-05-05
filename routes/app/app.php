@@ -36,8 +36,6 @@ Route::view('/create/operations', 'operations.create');
 
 Route::view('/activities', 'activities.index');
 
-Route::post('chat/groups', [App\Http\Controllers\App\Chat\ChatUserController::class, 'createGroup']);
-
 
 Route::get('property/listar', [PropertyController::class, 'listado'])->name('property.listar');
 Route::post('property/create', [PropertyController::class, 'create'])->name('property.crear');
