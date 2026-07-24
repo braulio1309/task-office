@@ -13,10 +13,10 @@
                             <h5 class="m-0 text-muted">{{ currentFolder ? currentFolder.name : 'Carpeta Raíz' }}</h5>
                         </div>
                         <div>
-                            <button v-if="can('create_documents')" @click="openFolderModal" class="btn btn-outline-primary btn-sm mr-2">
+                            <button v-if="canCreateFolder()" @click="openFolderModal" class="btn btn-outline-primary btn-sm mr-2">
                                 <i class="fa fa-folder-plus"></i> Nueva Carpeta
                             </button>
-                            <button v-if="can('create_documents')" @click="openUploadModal" class="btn btn-primary btn-sm">
+                            <button v-if="canCreateDocuments()" @click="openUploadModal" class="btn btn-primary btn-sm">
                                 <i class="fa fa-cloud-upload"></i> Subir Archivo
                             </button>
                         </div>
@@ -38,7 +38,7 @@
                                     <i class="fa fa-folder fa-3x text-warning mb-2"></i>
                                     <h6 class="text-truncate mb-0 font-weight-bold" :title="folder.name">{{ folder.name }}</h6>
                                     
-                                    <div v-if="can('delete_documents')" class="position-absolute" style="top:5px; right:5px;">
+                                    <div v-if="folder.can_delete" class="position-absolute" style="top:5px; right:5px;">
                                         <button @click.stop="deleteFolder(folder)" class="btn btn-sm btn-link text-danger p-0" title="Eliminar Carpeta">
                                             <i class="fa fa-times"></i>
                                         </button>
@@ -58,19 +58,19 @@
 
                                     <div class="file-actions d-flex justify-content-center align-items-center">
                                         
-                                        <button @click="previewFile(file)" class="btn btn-sm btn-primary mr-1 icon-btn" title="Vista Previa">
+                                        <button v-if="file.can_preview" @click="previewFile(file)" class="btn btn-sm btn-primary mr-1 icon-btn" title="Vista Previa">
                                             <i class="fa fa-eye"></i>
                                         </button>
 
-                                        <a :href="file.download_url" target="_blank" class="btn btn-sm btn-success mr-1 icon-btn" title="Descargar">
+                                        <a v-if="file.can_download" :href="file.download_url" target="_blank" class="btn btn-sm btn-success mr-1 icon-btn" title="Descargar">
                                             <i class="fa fa-download"></i>
                                         </a>
 
-                                        <button v-if="can('update_documents')" @click="openRenameModal(file)" class="btn btn-sm btn-info mr-1 icon-btn text-white" title="Renombrar">
+                                        <button v-if="file.can_rename" @click="openRenameModal(file)" class="btn btn-sm btn-info mr-1 icon-btn text-white" title="Renombrar">
                                             <i class="fa fa-edit"></i>
                                         </button>
 
-                                        <button v-if="can('delete_documents')" @click="deleteFile(file)" class="btn btn-sm btn-danger icon-btn" title="Eliminar">
+                                        <button v-if="file.can_delete" @click="deleteFile(file)" class="btn btn-sm btn-danger icon-btn" title="Eliminar">
                                             <i class="fa fa-trash"></i>
                                         </button>
 
@@ -95,6 +95,17 @@
                             <input type="file" class="custom-file-input" id="customFile" @change="handleFileUpload">
                             <label class="custom-file-label" for="customFile">{{ fileName || 'Seleccionar archivo...' }}</label>
                         </div>
+
+                        <div class="mt-3">
+                            <label class="mb-1">Usuarios adicionales que pueden verlo (opcional)</label>
+                            <select v-model="selectedVisibleUserIdsUpload" class="form-control" multiple>
+                                <option v-for="user in availableUsers" :key="'upload-user-'+user.id" :value="user.id">
+                                    {{ fullName(user) }}
+                                </option>
+                            </select>
+                            <small class="text-muted d-block mt-1">Si seleccionas usuarios, el archivo sera visible para ti y para ellos.</small>
+                        </div>
+
                         <div v-if="uploading" class="progress mt-3">
                             <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%">Subiendo...</div>
                         </div>
@@ -116,6 +127,16 @@
                     </div>
                     <div class="modal-body">
                         <input type="text" v-model="newFolderName" class="form-control" placeholder="Nombre de la carpeta">
+
+                        <div class="mt-3">
+                            <label class="mb-1">Usuarios adicionales que pueden verla (opcional)</label>
+                            <select v-model="selectedVisibleUserIdsFolder" class="form-control" multiple>
+                                <option v-for="user in availableUsers" :key="'folder-user-'+user.id" :value="user.id">
+                                    {{ fullName(user) }}
+                                </option>
+                            </select>
+                            <small class="text-muted d-block mt-1">Si seleccionas usuarios, la carpeta sera visible para ti y para ellos.</small>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
@@ -177,13 +198,13 @@
                             <p class="text-muted">Tipo: {{ previewData.mime_type }}</p>
                             <p class="text-muted">Tamaño: {{ previewData.readable_size }}</p>
                             <p class="text-muted mt-3">Este tipo de archivo no puede ser previsualizado en el navegador.</p>
-                            <a :href="previewData.download_url" target="_blank" class="btn btn-primary mt-3">
+                            <a v-if="previewData.can_download" :href="previewData.download_url" target="_blank" class="btn btn-primary mt-3">
                                 <i class="fa fa-download mr-2"></i>Descargar Archivo
                             </a>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <a :href="previewData.download_url" target="_blank" class="btn btn-success mr-auto">
+                        <a v-if="previewData.can_download" :href="previewData.download_url" target="_blank" class="btn btn-success mr-auto">
                             <i class="fa fa-download mr-2"></i>Descargar
                         </a>
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
@@ -215,6 +236,14 @@ export default {
             folders: [],
             files: [],
             breadcrumbs: ['Documentos'],
+            moduleCan: {
+                create_documents: false,
+                create_document_folders: false
+            },
+
+            availableUsers: [],
+            selectedVisibleUserIdsUpload: [],
+            selectedVisibleUserIdsFolder: [],
             
             // Datos para Formularios
             fileToUpload: null,
@@ -230,24 +259,45 @@ export default {
                 mime_type: '',
                 preview_url: '',
                 download_url: '',
-                readable_size: ''
+                readable_size: '',
+                can_download: false
             }
         };
     },
     async mounted() {
+        await this.fetchUsersForVisibility();
         await this.fetchContent();
     },
     methods: {
-        // --- SOLUCIÓN DEL ERROR: FUNCIÓN DE PERMISOS LOCAL ---
-        // Si tu Mixin no trae 'can', usamos esta por defecto que devuelve TRUE (todo permitido)
-        // para que no de error. Luego puedes ajustar la lógica real.
+        // Fallback local por si el getter de permisos del store no esta disponible.
         can(permissionName) {
-            // Si existe una función global de permisos, úsala:
             if (this.$store && this.$store.getters && this.$store.getters.can) {
                 return this.$store.getters.can(permissionName);
             }
-            // De lo contrario, retorna true para que no se rompa la vista
-            return true; 
+            return false;
+        },
+
+        canCreateDocuments() {
+            return this.moduleCan.create_documents || this.can('create_documents');
+        },
+
+        canCreateFolder() {
+            return this.moduleCan.create_document_folders || this.can('create_document_folders') || this.can('create_documents');
+        },
+
+        fullName(user) {
+            return [user.first_name, user.last_name].filter(Boolean).join(' ') || user.email;
+        },
+
+        async fetchUsersForVisibility() {
+            try {
+                const response = await axios.get('all-users');
+                const users = Array.isArray(response.data) ? response.data : (response.data.data || []);
+                const authId = this.$store && this.$store.state && this.$store.state.auth ? this.$store.state.auth.id : null;
+                this.availableUsers = users.filter(user => Number(user.id) !== Number(authId));
+            } catch (error) {
+                this.availableUsers = [];
+            }
         },
 
         // --- 1. OBTENER CONTENIDO (GET) ---
@@ -263,6 +313,7 @@ export default {
                 
                 this.currentFolder = response.data.current_folder;
                 this.currentFolderId = response.data.current_folder ? response.data.current_folder.id : null;
+                this.moduleCan = response.data.can || this.moduleCan;
                 
                 this.updateBreadcrumbs();
             } catch (error) {
@@ -284,6 +335,10 @@ export default {
                 formData.append('folder_id', this.currentFolderId);
             }
 
+            this.selectedVisibleUserIdsUpload.forEach(userId => {
+                formData.append('visible_user_ids[]', userId);
+            });
+
             try {
                 await axios.post('documents/upload', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
@@ -298,6 +353,7 @@ export default {
                 this.uploading = false;
                 this.fileToUpload = null;
                 this.fileName = '';
+                this.selectedVisibleUserIdsUpload = [];
             }
         },
 
@@ -307,11 +363,13 @@ export default {
             try {
                 await axios.post('documents/folder', {
                     name: this.newFolderName,
-                    parent_id: this.currentFolderId
+                    parent_id: this.currentFolderId,
+                    visible_user_ids: this.selectedVisibleUserIdsFolder
                 });
                 this.$toastr.s("Carpeta creada");
                 $('#folderModal').modal('hide');
                 this.newFolderName = '';
+                this.selectedVisibleUserIdsFolder = [];
                 await this.fetchContent(this.currentFolderId);
             } catch (error) {
                 this.$toastr.e(error.response?.data?.message || "Error al crear carpeta");
@@ -368,9 +426,11 @@ export default {
             $('#uploadModal').modal('show');
             this.fileToUpload = null;
             this.fileName = '';
+            this.selectedVisibleUserIdsUpload = [];
         },
         openFolderModal() {
             this.newFolderName = '';
+            this.selectedVisibleUserIdsFolder = [];
             $('#folderModal').modal('show');
         },
         navigateUp() {
@@ -407,7 +467,8 @@ export default {
                 mime_type: file.mime_type,
                 preview_url: file.preview_url,
                 download_url: file.download_url,
-                readable_size: file.readable_size
+                readable_size: file.readable_size,
+                can_download: !!file.can_download
             };
             $('#previewModal').modal('show');
         },

@@ -6,6 +6,7 @@ use App\Models\App\Traits\CalendarValidationRules;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Core\Auth\User;
+use App\Models\App\SamplePage\KanbanView\Stage;
 
 class Calendar extends Model
 {
@@ -14,16 +15,17 @@ class Calendar extends Model
 
      public function assignee()
     {
-        // Primer argumento: El modelo relacionado (User)
-        // Segundo argumento: La columna en esta tabla (events) que tiene el ID
         return $this->belongsTo(User::class, 'assigned_to');
     }
 
-    /**
-     * Relación: El evento "pertenece" a un supervisor.
-     */
     public function supervisor()
     {
         return $this->belongsTo(User::class, 'supervisor_id');
     }
+
+    public function stage()
+    {
+        return $this->belongsTo(Stage::class);
+    }
+
 }

@@ -258,6 +258,68 @@ class PermissionTableSeeder extends Seeder
                 'type_id' => $appId,
                 'group_name' => 'users'
             ],
+            // sample pages and tasks
+            [
+                'name' => 'view_chat',
+                'type_id' => $appId,
+                'group_name' => 'sample_pages'
+            ],
+            [
+                'name' => 'manage_calendar_view',
+                'type_id' => $appId,
+                'group_name' => 'sample_pages'
+            ],
+            [
+                'name' => 'manage_kanban_view',
+                'type_id' => $appId,
+                'group_name' => 'sample_pages'
+            ],
+            // documents
+            [
+                'name' => 'view_documents',
+                'type_id' => $appId,
+                'group_name' => 'documents'
+            ],
+            [
+                'name' => 'create_documents',
+                'type_id' => $appId,
+                'group_name' => 'documents'
+            ],
+            [
+                'name' => 'update_documents',
+                'type_id' => $appId,
+                'group_name' => 'documents'
+            ],
+            [
+                'name' => 'delete_documents',
+                'type_id' => $appId,
+                'group_name' => 'documents'
+            ],
+            [
+                'name' => 'preview_documents',
+                'type_id' => $appId,
+                'group_name' => 'documents'
+            ],
+            [
+                'name' => 'download_documents',
+                'type_id' => $appId,
+                'group_name' => 'documents'
+            ],
+            [
+                'name' => 'view_document_folders',
+                'type_id' => $appId,
+                'group_name' => 'documents'
+            ],
+            [
+                'name' => 'create_document_folders',
+                'type_id' => $appId,
+                'group_name' => 'documents'
+            ],
+            [
+                'name' => 'delete_document_folders',
+                'type_id' => $appId,
+                'group_name' => 'documents'
+            ],
         ];
 
         $this->enableForeignKeys();

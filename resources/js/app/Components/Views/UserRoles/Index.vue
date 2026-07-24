@@ -13,12 +13,6 @@
                         {{ $t('add_user') }}
                     </button>
                     <button type="button"
-                            class="btn btn-success btn-with-shadow mr-2"
-                            data-toggle="modal"
-                            @click="operationForUserInvitation">
-                        {{ $t('invite_users') }}
-                    </button>
-                    <button type="button"
                             class="btn btn-primary btn-with-shadow"
                             data-toggle="modal"
                             @click="operateRoles(true)">

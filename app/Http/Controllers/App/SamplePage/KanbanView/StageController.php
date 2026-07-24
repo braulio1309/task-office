@@ -9,6 +9,6 @@ use Illuminate\Http\Request;
 class StageController extends Controller
 {
     public function index(){
-        return Stage::with('tasks')->get();
+        return Stage::get();
     }
 }

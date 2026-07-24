@@ -8,7 +8,14 @@ trait TranslatedNameTrait
 {
     public function getTranslatedNameAttribute()
     {
-        return trans("default.{$this->attributes['name']}");
+        $key = "default.{$this->attributes['name']}";
+        $translated = trans($key);
+
+        if (empty($translated) || $translated === $key) {
+            return ucwords(str_replace('_', ' ', $this->attributes['name']));
+        }
+
+        return $translated;
     }
 
 }

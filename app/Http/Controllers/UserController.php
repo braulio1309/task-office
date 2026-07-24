@@ -49,13 +49,6 @@ class UserController extends Controller
                 'password' => Hash::make('default123'),
                 'phone' => $data['phone'] ?? null,
                 'birth_date' => $data['birth_date'] ?? null,
-                'sex' => $data['gender'] ?? null,
-                'weight_kg' => $data['weight_kg'] ?? null,
-                'height_cm' => $data['height_cm'] ?? null,
-                'activity_level' => $data['activity_level'] ?? null,
-                'goal' => $data['goal'] ?? null,
-                'allergies' => $data['allergies'] ?? null,
-                'preferences' => $data['preferences'] ?? null,
                 'status_id' => 1
             ]);
         } else {

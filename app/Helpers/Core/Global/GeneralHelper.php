@@ -10,7 +10,7 @@ if (! function_exists('home_route')) {
     {
         if (auth()->check()) {
             return [
-                'route_name' => 'core.dashboard',
+                'route_name' => 'documents.index',
                 'route_params' => null
             ];
         }

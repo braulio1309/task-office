@@ -16,7 +16,7 @@ class SidebarComposer
                 'id' => 'dashboard-samples',
                 'icon' => 'pie-chart',
                 'name' => __t('dashboard'),
-                'permission' => authorize_any(['view_default', 'view_academy', 'view_ecmommerce', 'view_hospital', 'view_hrm']),
+                'permission' => false,
                 'subMenu' => [
                     [
                         'name' => trans('custom.default'),
@@ -55,7 +55,16 @@ class SidebarComposer
                 'icon' => 'fa-file',
                 'name' => 'Documentos',
                 'url' => request()->root() . '/documents',
-                'permission' => authorize_any(['view_users', 'view_roles', 'invite_user', 'create_roles']),
+                'permission' => authorize_any([
+                    'view_documents',
+                    'create_documents',
+                    'preview_documents',
+                    'download_documents',
+                    'delete_documents',
+                    'view_document_folders',
+                    'create_document_folders',
+                    'delete_document_folders',
+                ]),
             ],
            /* [
                 'id' => 'Propiedades',
@@ -329,7 +338,7 @@ class SidebarComposer
                 'id' => 'Tareas',
                 'icon' => 'copy',
                 'name' => 'Tareas',
-                'permission' => authorize_any(['view_user_profile', 'view_blank_page']),
+                'permission' => authorize_any(['manage_calendar_view', 'manage_kanban_view']),
                 'subMenu' => [
 
                     
@@ -351,7 +360,7 @@ class SidebarComposer
                 'icon' => 'copy',
                 'name' => 'Chat',
                 'url' => request()->root() . '/chat',
-                'permission' => authorize_any(['view_users', 'view_roles', 'invite_user', 'create_roles']),
+                'permission' => true,
             ],
             /*[
                 'id' => 'error-pages',

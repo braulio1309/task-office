@@ -41,6 +41,18 @@
                                v-model="user.email"
                                :placeholder="$t('enter_user_email')"/>
                 </div>
+                <div class="form-group row align-items-center">
+                    <label for="userPassword" class="col-sm-3 mb-0">
+                        {{ $t('password') }}
+                    </label>
+                    <app-input id="userPassword"
+                               class="col-sm-9"
+                               type="password"
+                               :show-password="true"
+                               v-model="user.password"
+                               :placeholder="$t('enter_your_password')"
+                               :required="true"/>
+                </div>
                 <div class="form-group row align-items-center mb-0">
                     <label for="roles" class="col-sm-3 mb-0">
                         {{ $t('role') }}
@@ -85,24 +97,6 @@
         },
         methods: {
             submit() {
-                // Generate default password: first name + last name without spaces + "1@"
-                // This ensures it meets the regex requirements (digit and special character)
-                const firstName = (this.user.first_name || '').trim().replace(/\s+/g, '');
-                const lastName = (this.user.last_name || '').trim().replace(/\s+/g, '');
-                const baseName = firstName + lastName;
-                
-                // Minimum password length required is 8 characters
-                // baseName needs at least 6 chars to reach 8 after adding "1@" (2 chars)
-                const MIN_BASE_LENGTH = 6;
-                
-                if (baseName.length < MIN_BASE_LENGTH) {
-                    // If name is too short, add timestamp to ensure minimum length
-                    const timestamp = Date.now().toString().slice(-4);
-                    this.user.password = baseName + timestamp + '1@';
-                } else {
-                    this.user.password = baseName + '1@';
-                }
-                
                 this.save(this.user);
             },
 

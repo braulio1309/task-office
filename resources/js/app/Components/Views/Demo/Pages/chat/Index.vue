@@ -64,13 +64,13 @@
 
                     <div class="contact-category-header mt-2" @click="isDirectOpen = !isDirectOpen">
                         <span class="text-muted font-weight-bold text-uppercase text-size-12">
-                            Mensajes Directos ({{ filteredUsers.length }})
+                            Contactos ({{ filteredContacts.length }})
                         </span>
                         <app-icon :name="isDirectOpen ? 'chevron-down' : 'chevron-right'" class="size-14 text-muted"/>
                     </div>
 
                     <div v-show="isDirectOpen">
-                        <template v-for="contact in filteredUsers">
+                        <template v-for="contact in filteredContacts">
                             <a class="contact"
                                :class="{'active': userInfo.id === contact.id}"
                                @click.prevent="changeActive(contact)">
@@ -92,8 +92,8 @@
                                 </span>
                             </a>
                         </template>
-                         <div v-if="filteredUsers.length === 0" class="p-2 text-center text-muted text-size-12">
-                            No hay usuarios
+                        <div v-if="filteredContacts.length === 0" class="p-2 text-center text-muted text-size-12">
+                            No hay contactos disponibles
                         </div>
                     </div>
 
@@ -324,7 +324,7 @@ export default {
         filteredGroups() {
             return this.allVisibleContacts.filter(c => c.type === 'group');
         },
-        filteredUsers() {
+        filteredContacts() {
             return this.allVisibleContacts.filter(c => c.type !== 'group');
         }
     },

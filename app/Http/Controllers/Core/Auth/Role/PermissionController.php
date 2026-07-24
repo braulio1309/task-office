@@ -23,7 +23,18 @@ class PermissionController extends Controller
      */
     public function index()
     {
+        $hiddenGroups = [
+            'datatable',
+            'dashboard',
+            'form',
+            'ui_elements',
+            'error_pages',
+            'authentication',
+            'sample_pages',
+        ];
+
         return PermissionFilter::new(true, Permission::query()
+            ->whereNotIn('group_name', $hiddenGroups)
             ->filters($this->filter))
             ->filter()
             ->get()

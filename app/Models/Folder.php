@@ -94,6 +94,12 @@ class Folder extends Model
         return $this->morphMany(EntityPermission::class, 'permissible');
     }
 
+    public function visibilityUsers()
+    {
+        return $this->belongsToMany(User::class, 'folder_user_visibilities', 'folder_id', 'user_id')
+            ->withTimestamps();
+    }
+
     // ===========================
     // Helpers / Accessors
     // ===========================

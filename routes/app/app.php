@@ -19,11 +19,12 @@ use App\Http\Controllers\DocumentController;
 Route::view('/properties', 'properties.index');
 Route::view('/properties/create', 'properties.create');
 
-Route::view('/documents', 'documents.index');
+Route::view('/documents', 'documents.index')->name('documents.index');
 Route::get('documents/list', [App\Http\Controllers\DocumentController::class, 'list']);
 Route::post('documents/upload', [App\Http\Controllers\DocumentController::class, 'upload']);
 Route::post('documents/folder', [App\Http\Controllers\DocumentController::class, 'createFolder']);
 Route::get('documents/view/{id}', [App\Http\Controllers\DocumentController::class, 'view']);
+Route::get('documents/download/{id}', [App\Http\Controllers\DocumentController::class, 'download']);
 Route::post('documents/file/{id}/rename', [App\Http\Controllers\DocumentController::class, 'rename']);
 Route::delete('documents/file/{id}', [App\Http\Controllers\DocumentController::class, 'deleteFile']);
 Route::delete('documents/folder/{id}', [App\Http\Controllers\DocumentController::class, 'deleteFolder']);

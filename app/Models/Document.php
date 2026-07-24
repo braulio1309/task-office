@@ -84,14 +84,19 @@ class Document extends Model
     {
         return $this->morphMany(EntityPermission::class, 'permissible');
     }
+
+    public function visibilityUsers()
+    {
+        return $this->belongsToMany(User::class, 'document_user_visibilities', 'document_id', 'user_id')
+            ->withTimestamps();
+    }
     
     /**
      * Devuelve la URL pública o temporal para descargar.
      */
     public function getDownloadUrlAttribute()
     {
-        // Ajusta 'public' o 's3' según tu disco
-        return Storage::disk('public')->url($this->file_path); 
+        return url('documents/download/' . $this->id);
     }
 
     /**
