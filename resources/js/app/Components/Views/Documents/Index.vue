@@ -97,13 +97,23 @@
                         </div>
 
                         <div class="mt-3">
-                            <label class="mb-1">Usuarios adicionales que pueden verlo (opcional)</label>
+                            <label class="mb-1">Usuarios de excepcion (siempre pueden verlo)</label>
                             <select v-model="selectedVisibleUserIdsUpload" class="form-control" multiple>
                                 <option v-for="user in availableUsers" :key="'upload-user-'+user.id" :value="user.id">
                                     {{ fullName(user) }}
                                 </option>
                             </select>
-                            <small class="text-muted d-block mt-1">Si seleccionas usuarios, el archivo sera visible para ti y para ellos.</small>
+                            <small class="text-muted d-block mt-1">Estos usuarios veran el archivo siempre, aunque no pertenezcan a los roles seleccionados.</small>
+                        </div>
+
+                        <div class="mt-3">
+                            <label class="mb-1">Roles que pueden ver este archivo (opcional)</label>
+                            <select v-model="selectedVisibleRoleIdsUpload" class="form-control" multiple>
+                                <option v-for="role in availableRoles" :key="'upload-role-'+role.id" :value="role.id">
+                                    {{ role.name }}
+                                </option>
+                            </select>
+                            <small class="text-muted d-block mt-1">Si seleccionas roles, los usuarios de esos roles tambien podran ver este archivo.</small>
                         </div>
 
                         <div v-if="uploading" class="progress mt-3">
@@ -129,13 +139,23 @@
                         <input type="text" v-model="newFolderName" class="form-control" placeholder="Nombre de la carpeta">
 
                         <div class="mt-3">
-                            <label class="mb-1">Usuarios adicionales que pueden verla (opcional)</label>
+                            <label class="mb-1">Usuarios de excepcion (siempre pueden verla)</label>
                             <select v-model="selectedVisibleUserIdsFolder" class="form-control" multiple>
                                 <option v-for="user in availableUsers" :key="'folder-user-'+user.id" :value="user.id">
                                     {{ fullName(user) }}
                                 </option>
                             </select>
-                            <small class="text-muted d-block mt-1">Si seleccionas usuarios, la carpeta sera visible para ti y para ellos.</small>
+                            <small class="text-muted d-block mt-1">Estos usuarios veran la carpeta siempre, aunque no pertenezcan a los roles seleccionados.</small>
+                        </div>
+
+                        <div class="mt-3">
+                            <label class="mb-1">Roles que pueden ver esta carpeta (opcional)</label>
+                            <select v-model="selectedVisibleRoleIdsFolder" class="form-control" multiple>
+                                <option v-for="role in availableRoles" :key="'folder-role-'+role.id" :value="role.id">
+                                    {{ role.name }}
+                                </option>
+                            </select>
+                            <small class="text-muted d-block mt-1">Si seleccionas roles, los usuarios de esos roles tambien podran ver esta carpeta.</small>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -242,8 +262,11 @@ export default {
             },
 
             availableUsers: [],
+            availableRoles: [],
             selectedVisibleUserIdsUpload: [],
             selectedVisibleUserIdsFolder: [],
+            selectedVisibleRoleIdsUpload: [],
+            selectedVisibleRoleIdsFolder: [],
             
             // Datos para Formularios
             fileToUpload: null,
@@ -266,6 +289,7 @@ export default {
     },
     async mounted() {
         await this.fetchUsersForVisibility();
+        await this.fetchRolesForVisibility();
         await this.fetchContent();
     },
     methods: {
@@ -297,6 +321,16 @@ export default {
                 this.availableUsers = users.filter(user => Number(user.id) !== Number(authId));
             } catch (error) {
                 this.availableUsers = [];
+            }
+        },
+
+        async fetchRolesForVisibility() {
+            try {
+                const response = await axios.get('all-roles');
+                const roles = Array.isArray(response.data) ? response.data : (response.data.data || []);
+                this.availableRoles = roles;
+            } catch (error) {
+                this.availableRoles = [];
             }
         },
 
@@ -339,6 +373,10 @@ export default {
                 formData.append('visible_user_ids[]', userId);
             });
 
+            this.selectedVisibleRoleIdsUpload.forEach(roleId => {
+                formData.append('visible_role_ids[]', roleId);
+            });
+
             try {
                 await axios.post('documents/upload', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
@@ -354,6 +392,7 @@ export default {
                 this.fileToUpload = null;
                 this.fileName = '';
                 this.selectedVisibleUserIdsUpload = [];
+                this.selectedVisibleRoleIdsUpload = [];
             }
         },
 
@@ -364,12 +403,14 @@ export default {
                 await axios.post('documents/folder', {
                     name: this.newFolderName,
                     parent_id: this.currentFolderId,
-                    visible_user_ids: this.selectedVisibleUserIdsFolder
+                    visible_user_ids: this.selectedVisibleUserIdsFolder,
+                    visible_role_ids: this.selectedVisibleRoleIdsFolder
                 });
                 this.$toastr.s("Carpeta creada");
                 $('#folderModal').modal('hide');
                 this.newFolderName = '';
                 this.selectedVisibleUserIdsFolder = [];
+                this.selectedVisibleRoleIdsFolder = [];
                 await this.fetchContent(this.currentFolderId);
             } catch (error) {
                 this.$toastr.e(error.response?.data?.message || "Error al crear carpeta");
@@ -427,10 +468,12 @@ export default {
             this.fileToUpload = null;
             this.fileName = '';
             this.selectedVisibleUserIdsUpload = [];
+            this.selectedVisibleRoleIdsUpload = [];
         },
         openFolderModal() {
             this.newFolderName = '';
             this.selectedVisibleUserIdsFolder = [];
+            this.selectedVisibleRoleIdsFolder = [];
             $('#folderModal').modal('show');
         },
         navigateUp() {

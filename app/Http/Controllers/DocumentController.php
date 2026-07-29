@@ -26,8 +26,6 @@ class DocumentController extends Controller
      */
     public function list(Request $request)
     {
-        $this->abortUnlessAnyPermission(['view_documents', 'view_document_folders']);
-
         $folderId = $request->get('folder_id') === 'null' ? null : $request->get('folder_id');
         $currentFolder = null;
 
@@ -47,7 +45,8 @@ class DocumentController extends Controller
             ->map(function (Folder $folder) {
                 return [
                     'id' => $folder->id,
-                    'name' => $folder->name,
+                    'name' => $folder->original_name ?: $folder->name ?: 'Sin nombre',
+                    'original_name' => $folder->original_name,
                     'parent_id' => $folder->parent_id,
                     'created_by' => $folder->created_by,
                     'can_delete' => $this->canDeleteFolder($folder),
@@ -66,7 +65,8 @@ class DocumentController extends Controller
                 return [
                     'id' => $document->id,
                     'folder_id' => $document->folder_id,
-                    'name' => $document->name,
+                    'name' => $document->original_name ?: $document->name ?: 'Archivo sin nombre',
+                    'original_name' => $document->original_name,
                     'mime_type' => $document->mime_type,
                     'size' => $document->size,
                     'created_by' => $document->created_by,
@@ -86,7 +86,7 @@ class DocumentController extends Controller
             'files' => $files,
             'current_folder' => $currentFolder ? [
                 'id' => $currentFolder->id,
-                'name' => $currentFolder->name,
+                'name' => $currentFolder->original_name ?: $currentFolder->name,
                 'parent_id' => $currentFolder->parent_id,
             ] : null,
             'can' => [
@@ -108,6 +108,8 @@ class DocumentController extends Controller
             'folder_id' => 'nullable',
             'visible_user_ids' => 'nullable|array',
             'visible_user_ids.*' => 'integer|exists:users,id',
+            'visible_role_ids' => 'nullable|array',
+            'visible_role_ids.*' => 'integer|exists:roles,id',
         ]);
 
         $uploadedFile = $request->file('file');
@@ -124,6 +126,7 @@ class DocumentController extends Controller
         $document = Document::create([
             'folder_id' => $folderId,
             'name' => $uploadedFile->getClientOriginalName(),
+            'original_name' => $uploadedFile->getClientOriginalName(),
             'file_path' => $path,
             'mime_type' => $uploadedFile->getClientMimeType(),
             'size' => $uploadedFile->getSize(),
@@ -142,6 +145,19 @@ class DocumentController extends Controller
             $document->visibilityUsers()->sync($visibleUserIds);
         }
 
+        $visibleRoleIds = collect($request->input('visible_role_ids', []))
+            ->map(function ($id) {
+                return (int) $id;
+            })
+            ->filter(function ($id) {
+                return $id > 0;
+            })
+            ->unique()
+            ->values()
+            ->all();
+
+        $this->syncEntityViewRolePermissions($document, $visibleRoleIds);
+
         return response()->json($document);
     }
 
@@ -157,6 +173,8 @@ class DocumentController extends Controller
             'parent_id' => 'nullable',
             'visible_user_ids' => 'nullable|array',
             'visible_user_ids.*' => 'integer|exists:users,id',
+            'visible_role_ids' => 'nullable|array',
+            'visible_role_ids.*' => 'integer|exists:roles,id',
         ]);
 
         $parentId = $request->input('parent_id') == 'null' ? null : $request->input('parent_id');
@@ -168,6 +186,7 @@ class DocumentController extends Controller
 
         $folder = Folder::create([
             'name' => $request->name,
+            'original_name' => $request->name,
             'parent_id' => $parentId,
             'created_by' => Auth::id()
         ]);
@@ -184,7 +203,47 @@ class DocumentController extends Controller
             $folder->visibilityUsers()->sync($visibleUserIds);
         }
 
+        $visibleRoleIds = collect($request->input('visible_role_ids', []))
+            ->map(function ($id) {
+                return (int) $id;
+            })
+            ->filter(function ($id) {
+                return $id > 0;
+            })
+            ->unique()
+            ->values()
+            ->all();
+
+        $this->syncEntityViewRolePermissions($folder, $visibleRoleIds);
+
         return response()->json($folder);
+    }
+
+    private function syncEntityViewRolePermissions(Model $entity, array $roleIds): void
+    {
+        $query = $entity->permissions()->where('access_level', 'view');
+
+        if (empty($roleIds)) {
+            $query->delete();
+            return;
+        }
+
+        $query->whereNotIn('role_id', $roleIds)->delete();
+
+        $existingRoleIds = $entity->permissions()
+            ->where('access_level', 'view')
+            ->whereIn('role_id', $roleIds)
+            ->pluck('role_id')
+            ->all();
+
+        $newRoleIds = array_diff($roleIds, $existingRoleIds);
+
+        foreach ($newRoleIds as $roleId) {
+            $entity->permissions()->create([
+                'role_id' => $roleId,
+                'access_level' => 'view',
+            ]);
+        }
     }
 
     /**
@@ -223,7 +282,7 @@ class DocumentController extends Controller
         }
 
         // Sanitizar el nombre del archivo más estrictamente
-        $safeName = preg_replace('/[^\w\s\-_\.]/', '', $document->name);
+        $safeName = preg_replace('/[^\w\s\-_\.]/', '', $document->original_name ?: $document->name);
         if (empty($safeName)) {
             $safeName = 'document';
         }
@@ -249,7 +308,7 @@ class DocumentController extends Controller
             return response()->json(['error' => 'Archivo no encontrado'], 404);
         }
 
-        $safeName = preg_replace('/[^\w\s\-_\.]/', '', $document->name);
+        $safeName = preg_replace('/[^\w\s\-_\.]/', '', $document->original_name ?: $document->name);
         if (empty($safeName)) {
             $safeName = 'document';
         }
@@ -428,6 +487,11 @@ class DocumentController extends Controller
             return false;
         }
 
+        // Si el archivo tiene reglas por rol, solo esos roles pueden verlo en el listado.
+        if ($this->hasEntityRules($document)) {
+            return $this->hasRoleAccess($document, self::DOCUMENT_VIEW_LEVELS);
+        }
+
         if ($this->isManuallyVisibleToAuthUser($document)) {
             return true;
         }
@@ -449,6 +513,10 @@ class DocumentController extends Controller
             return false;
         }
 
+        if ($this->hasEntityRules($document)) {
+            return $this->hasRoleAccess($document, self::DOCUMENT_VIEW_LEVELS);
+        }
+
         return $this->canViewDocument($document);
     }
 
@@ -460,6 +528,10 @@ class DocumentController extends Controller
 
         if (!$this->hasAnyPermission(['download_documents'])) {
             return false;
+        }
+
+        if ($this->hasEntityRules($document)) {
+            return $this->hasRoleAccess($document, self::DOCUMENT_DOWNLOAD_LEVELS);
         }
 
         if ($this->isManuallyVisibleToAuthUser($document)) {
@@ -521,12 +593,13 @@ class DocumentController extends Controller
             return true;
         }
 
-        if (!$this->hasAnyPermission(['view_document_folders', 'view_documents'])) {
-            return false;
-        }
-
+        // Excepcion explicita: si esta en la lista manual de visibilidad, siempre ve la carpeta.
         if ($this->isManuallyVisibleToAuthUser($folder)) {
             return true;
+        }
+
+        if (!$this->hasAnyPermission(['view_document_folders', 'view_documents'])) {
+            return false;
         }
 
         if ($this->hasRoleAccess($folder, self::FOLDER_VIEW_LEVELS)) {
