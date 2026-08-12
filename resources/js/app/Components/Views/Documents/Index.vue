@@ -27,14 +27,23 @@
                             <div class="spinner-border text-primary" role="status"></div>
                         </div>
 
-                        <div v-else class="row">
-                            <div v-if="folders.length === 0 && files.length === 0" class="col-12 text-center py-5 text-muted">
-                                <i class="fa fa-folder-open fa-3x mb-3"></i>
-                                <p>Esta carpeta está vacía</p>
+                        <div v-else>
+                            <div v-if="isDragOver || uploading" class="upload-drop-indicator mb-3">
+                                <div class="d-flex align-items-center justify-content-center flex-column text-center py-4">
+                                    <div class="spinner-border text-primary mb-2" role="status"></div>
+                                    <strong>{{ uploading ? (pendingUploadCount > 1 ? `Subiendo ${pendingUploadCount} archivos...` : 'Subiendo archivo...') : (pendingUploadCount > 1 ? `Soltando ${pendingUploadCount} archivos` : 'Soltando archivo') }}</strong>
+                                    <small class="text-muted mt-1">{{ currentFolder ? 'Se cargará en la carpeta actual' : 'Se cargará en la carpeta raíz' }}</small>
+                                </div>
                             </div>
 
-                            <div v-for="folder in folders" :key="'f-'+folder.id" class="col-6 col-md-3 col-lg-2 mb-4" @click="navigateTo(folder.id)" style="cursor: pointer;">
-                                <div class="card h-100 border-0 bg-light folder-card text-center p-3 hover-shadow position-relative">
+                            <div class="row" @dragover.prevent="onDragOver" @dragleave="onDragLeave" @drop="onDropToCurrentFolder">
+                                <div v-if="folders.length === 0 && files.length === 0" class="col-12 text-center py-5 text-muted">
+                                    <i class="fa fa-folder-open fa-3x mb-3"></i>
+                                    <p>Esta carpeta está vacía</p>
+                                </div>
+
+                            <div v-for="folder in folders" :key="'f-'+folder.id" class="col-6 col-md-3 col-lg-2 mb-4" @click="navigateTo(folder.id)" @dragover.prevent @drop.stop="onDropIntoFolder(folder, $event)" style="cursor: pointer;">
+                                <div class="card h-100 border-0 bg-light folder-card text-center p-3 hover-shadow position-relative" draggable="true" @dragstart="onDragStart({ type: 'folder', item: folder })" @dragend="clearDragState">
                                     <i class="fa fa-folder fa-3x text-warning mb-2"></i>
                                     <h6 class="text-truncate mb-0 font-weight-bold" :title="folder.name">{{ folder.name }}</h6>
                                     
@@ -46,8 +55,8 @@
                                 </div>
                             </div>
 
-                            <div v-for="file in files" :key="'d-'+file.id" class="col-6 col-md-3 col-lg-2 mb-4">
-                                <div class="card h-100 border text-center p-3 hover-card position-relative file-card">
+                            <div v-for="file in files" :key="'d-'+file.id" class="col-6 col-md-3 col-lg-2 mb-4" @dragover.prevent @drop.stop="onDropIntoFolder(null, $event, file)">
+                                <div class="card h-100 border text-center p-3 hover-card position-relative file-card" draggable="true" @dragstart="onDragStart({ type: 'file', item: file })" @dragend="clearDragState">
                                     
                                     <div class="file-info mb-2">
                                         <i :class="getFileIcon(file.mime_type)" class="fa-3x mb-2"></i>
@@ -232,7 +241,7 @@
                 </div>
             </div>
         </div>
-
+        </div>
     </div>
 </template>
 
@@ -284,7 +293,10 @@ export default {
                 download_url: '',
                 readable_size: '',
                 can_download: false
-            }
+            },
+            dragData: null,
+            isDragOver: false,
+            pendingUploadCount: 0
         };
     },
     async mounted() {
@@ -359,12 +371,17 @@ export default {
         },
 
         // --- 2. SUBIR ARCHIVO (POST) ---
-        async uploadFile() {
-            if (!this.fileToUpload) return;
-            
+        async uploadFile(files = null) {
+            const uploadFiles = files || (this.fileToUpload ? [this.fileToUpload] : []);
+            if (!uploadFiles.length) return;
+
             this.uploading = true;
             let formData = new FormData();
-            formData.append('file', this.fileToUpload);
+
+            uploadFiles.forEach((file) => {
+                formData.append('files[]', file);
+            });
+
             if (this.currentFolderId) {
                 formData.append('folder_id', this.currentFolderId);
             }
@@ -381,7 +398,7 @@ export default {
                 await axios.post('documents/upload', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
-                this.$toastr.s("Archivo subido correctamente");
+                this.$toastr.s(uploadFiles.length > 1 ? "Archivos subidos correctamente" : "Archivo subido correctamente");
                 $('#uploadModal').modal('hide');
                 await this.fetchContent(this.currentFolderId);
             } catch (error) {
@@ -389,10 +406,12 @@ export default {
                 this.$toastr.e(msg);
             } finally {
                 this.uploading = false;
-                this.fileToUpload = null;
-                this.fileName = '';
-                this.selectedVisibleUserIdsUpload = [];
-                this.selectedVisibleRoleIdsUpload = [];
+                if (!files) {
+                    this.fileToUpload = null;
+                    this.fileName = '';
+                    this.selectedVisibleUserIdsUpload = [];
+                    this.selectedVisibleRoleIdsUpload = [];
+                }
             }
         },
 
@@ -438,24 +457,146 @@ export default {
 
         // --- 5. ELIMINAR (DELETE) ---
         async deleteFile(file) {
+            if (!file || !file.can_delete) {
+                this.$toastr.e('No tienes permisos para eliminar este archivo');
+                return;
+            }
             if(!confirm('¿Estás seguro de eliminar este archivo?')) return;
             try {
                 await axios.delete(`documents/file/${file.id}`);
                 this.$toastr.s('Archivo eliminado');
                 this.fetchContent(this.currentFolderId);
             } catch (e) {
-                this.$toastr.e('Error al eliminar');
+                const msg = e.response?.data?.message || 'Error al eliminar';
+                this.$toastr.e(msg);
             }
         },
         async deleteFolder(folder) {
+             if (!folder || !folder.can_delete) {
+                this.$toastr.e('No tienes permisos para eliminar esta carpeta');
+                return;
+             }
              if(!confirm('¿Eliminar carpeta y todo su contenido?')) return;
              try {
                 await axios.delete(`documents/folder/${folder.id}`);
                 this.$toastr.s('Carpeta eliminada');
                 this.fetchContent(this.currentFolderId);
              } catch (e) {
-                this.$toastr.e('Error al eliminar');
+                const msg = e.response?.data?.message || 'Error al eliminar';
+                this.$toastr.e(msg);
              }
+        },
+
+        onDragStart(payload) {
+            this.dragData = payload;
+        },
+        onDragOver(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const fileList = event.dataTransfer && event.dataTransfer.files ? [...event.dataTransfer.files] : [];
+            this.pendingUploadCount = fileList.length;
+            this.isDragOver = true;
+        },
+        onDragLeave(event) {
+            if (this.uploading) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+            this.isDragOver = false;
+            this.pendingUploadCount = 0;
+        },
+        clearDragState() {
+            this.dragData = null;
+            if (!this.uploading) {
+                this.isDragOver = false;
+                this.pendingUploadCount = 0;
+            }
+        },
+        async handleExternalDrop(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const fileList = event.dataTransfer && event.dataTransfer.files ? [...event.dataTransfer.files] : [];
+            if (!fileList.length) {
+                return;
+            }
+
+            this.pendingUploadCount = fileList.length;
+            this.uploading = true;
+            this.isDragOver = true;
+            const formData = new FormData();
+
+            fileList.forEach((file) => {
+                formData.append('files[]', file);
+            });
+
+            if (this.currentFolderId) {
+                formData.append('folder_id', this.currentFolderId);
+            }
+
+            try {
+                await axios.post('documents/upload', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                this.$toastr.s(fileList.length > 1 ? 'Archivos subidos correctamente' : 'Archivo subido correctamente');
+                await this.fetchContent(this.currentFolderId);
+            } catch (error) {
+                const msg = error.response?.data?.message || 'Error al subir archivo';
+                this.$toastr.e(msg);
+            } finally {
+                this.uploading = false;
+                this.isDragOver = false;
+                this.pendingUploadCount = 0;
+            }
+        },
+        async onDropIntoFolder(folder, event, file = null) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length) {
+                await this.handleExternalDrop(event);
+                return;
+            }
+
+            if (!this.dragData) return;
+
+            const sourceType = this.dragData.type;
+            const sourceItem = this.dragData.item;
+            const targetFolderId = folder ? folder.id : (this.currentFolderId || null);
+
+            if (!targetFolderId && sourceType === 'file') {
+                this.clearDragState();
+                return;
+            }
+
+            try {
+                if (sourceType === 'file') {
+                    await axios.post(`documents/file/${sourceItem.id}/move`, { folder_id: targetFolderId });
+                    this.$toastr.s('Archivo movido correctamente');
+                }
+
+                if (sourceType === 'folder') {
+                    await axios.post(`documents/folder/${sourceItem.id}/move`, { parent_id: targetFolderId });
+                    this.$toastr.s('Carpeta movida correctamente');
+                }
+
+                await this.fetchContent(this.currentFolderId);
+            } catch (error) {
+                const msg = error.response?.data?.message || 'No se pudo mover el elemento';
+                this.$toastr.e(msg);
+            } finally {
+                this.clearDragState();
+            }
+        },
+        onDropToCurrentFolder(event) {
+            if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length) {
+                this.handleExternalDrop(event);
+                return;
+            }
+            if (!this.dragData) return;
+            this.onDropIntoFolder(null, event);
         },
 
         // --- UTILIDADES DE INTERFAZ ---
@@ -533,6 +674,14 @@ export default {
     transition: all 0.3s ease;
 }
 
+.upload-drop-indicator {
+    border: 2px dashed var(--brand-color);
+    border-radius: 12px;
+    background: rgba(92, 45, 148, 0.06);
+    color: var(--brand-color);
+    box-shadow: inset 0 0 0 1px rgba(92, 45, 148, 0.08);
+}
+
 /* Efecto Hover en Tarjetas */
 .hover-shadow:hover, .file-card:hover {
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
@@ -566,6 +715,10 @@ export default {
 /* Estado Hover: Se desliza hacia arriba */
 .file-card:hover .file-actions {
     transform: translateY(0);
+}
+
+.upload-drop-indicator strong {
+    font-size: 1.05rem;
 }
 
 /* Estilos de botones pequeños */

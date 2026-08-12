@@ -26,6 +26,8 @@ Route::post('documents/folder', [App\Http\Controllers\DocumentController::class,
 Route::get('documents/view/{id}', [App\Http\Controllers\DocumentController::class, 'view']);
 Route::get('documents/download/{id}', [App\Http\Controllers\DocumentController::class, 'download']);
 Route::post('documents/file/{id}/rename', [App\Http\Controllers\DocumentController::class, 'rename']);
+Route::post('documents/file/{id}/move', [App\Http\Controllers\DocumentController::class, 'moveFile']);
+Route::post('documents/folder/{id}/move', [App\Http\Controllers\DocumentController::class, 'moveFolder']);
 Route::delete('documents/file/{id}', [App\Http\Controllers\DocumentController::class, 'deleteFile']);
 Route::delete('documents/folder/{id}', [App\Http\Controllers\DocumentController::class, 'deleteFolder']);
 

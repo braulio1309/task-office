@@ -64,9 +64,13 @@ trait UserBootTrait
                 ->handle();
         });
 
-        static::deleting(function (User $user) {
+        static::deleting(function ($model) {
+            if (! $model instanceof User) {
+                return;
+            }
+
             WhileUserDeleting::new(true)
-                ->setModel($user)
+                ->setModel($model)
                 ->handle();
         });
 

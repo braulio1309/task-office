@@ -103,8 +103,15 @@ class DocumentController extends Controller
     {
         $this->abortUnlessAnyPermission(['create_documents']);
 
+        $uploadedFiles = $request->file('files', []);
+        if ($request->hasFile('file') && empty($uploadedFiles)) {
+            $uploadedFiles = [$request->file('file')];
+        }
+
         $request->validate([
-            'file' => 'required|file|max:10240', // Max 10MB
+            'files' => 'nullable|array',
+            'files.*' => 'file|max:10240',
+            'file' => 'nullable|file|max:10240',
             'folder_id' => 'nullable',
             'visible_user_ids' => 'nullable|array',
             'visible_user_ids.*' => 'integer|exists:users,id',
@@ -112,7 +119,10 @@ class DocumentController extends Controller
             'visible_role_ids.*' => 'integer|exists:roles,id',
         ]);
 
-        $uploadedFile = $request->file('file');
+        if (empty($uploadedFiles)) {
+            abort(422, 'Debes seleccionar al menos un archivo');
+        }
+
         $folderId = $request->input('folder_id') == 'null' ? null : $request->input('folder_id');
 
         if ($folderId) {
@@ -120,45 +130,49 @@ class DocumentController extends Controller
             abort_unless($this->canCreateInFolder($folder), 403, 'No autorizado para subir en esta carpeta');
         }
 
-        // Guardar en Storage/app/public/documents/año
-        $path = $uploadedFile->store('documents/' . date('Y'), 'public');
+        $createdDocuments = [];
 
-        $document = Document::create([
-            'folder_id' => $folderId,
-            'name' => $uploadedFile->getClientOriginalName(),
-            'original_name' => $uploadedFile->getClientOriginalName(),
-            'file_path' => $path,
-            'mime_type' => $uploadedFile->getClientMimeType(),
-            'size' => $uploadedFile->getSize(),
-            'created_by' => Auth::id() // Asumiendo autenticación
-        ]);
+        foreach ($uploadedFiles as $uploadedFile) {
+            $path = $uploadedFile->store('documents/' . date('Y'), 'public');
 
-        $visibleUserIds = collect($request->input('visible_user_ids', []))
-            ->filter(function ($id) {
-                return (int) $id !== (int) Auth::id();
-            })
-            ->unique()
-            ->values()
-            ->all();
+            $document = Document::create([
+                'folder_id' => $folderId,
+                'name' => $uploadedFile->getClientOriginalName(),
+                'original_name' => $uploadedFile->getClientOriginalName(),
+                'file_path' => $path,
+                'mime_type' => $uploadedFile->getClientMimeType(),
+                'size' => $uploadedFile->getSize(),
+                'created_by' => Auth::id()
+            ]);
 
-        if (!empty($visibleUserIds)) {
-            $document->visibilityUsers()->sync($visibleUserIds);
+            $visibleUserIds = collect($request->input('visible_user_ids', []))
+                ->filter(function ($id) {
+                    return (int) $id !== (int) Auth::id();
+                })
+                ->unique()
+                ->values()
+                ->all();
+
+            if (!empty($visibleUserIds)) {
+                $document->visibilityUsers()->sync($visibleUserIds);
+            }
+
+            $visibleRoleIds = collect($request->input('visible_role_ids', []))
+                ->map(function ($id) {
+                    return (int) $id;
+                })
+                ->filter(function ($id) {
+                    return $id > 0;
+                })
+                ->unique()
+                ->values()
+                ->all();
+
+            $this->syncEntityViewRolePermissions($document, $visibleRoleIds);
+            $createdDocuments[] = $document;
         }
 
-        $visibleRoleIds = collect($request->input('visible_role_ids', []))
-            ->map(function ($id) {
-                return (int) $id;
-            })
-            ->filter(function ($id) {
-                return $id > 0;
-            })
-            ->unique()
-            ->values()
-            ->all();
-
-        $this->syncEntityViewRolePermissions($document, $visibleRoleIds);
-
-        return response()->json($document);
+        return response()->json(count($createdDocuments) === 1 ? $createdDocuments[0] : $createdDocuments);
     }
 
     /**
@@ -332,6 +346,61 @@ class DocumentController extends Controller
         $document->save();
 
         return response()->json($document);
+    }
+
+    public function moveFile(Request $request, $id)
+    {
+        $this->abortUnlessAnyPermission(['update_documents', 'delete_documents', 'create_documents']);
+
+        $request->validate([
+            'folder_id' => 'nullable|integer|exists:folders,id',
+        ]);
+
+        $document = Document::with(['permissions', 'visibilityUsers'])->findOrFail($id);
+        abort_unless($this->canRenameDocument($document) || $this->canDeleteDocument($document), 403, 'No autorizado para mover este archivo');
+
+        $targetFolderId = $request->input('folder_id');
+        $targetFolder = $targetFolderId ? Folder::with(['permissions', 'visibilityUsers'])->findOrFail($targetFolderId) : null;
+
+        if ($targetFolder && !$this->canCreateInFolder($targetFolder)) {
+            abort(403, 'No autorizado para mover el archivo a esta carpeta');
+        }
+
+        if ($document->folder_id === $targetFolderId) {
+            return response()->json($document);
+        }
+
+        $document->folder_id = $targetFolderId;
+        $document->save();
+
+        return response()->json($document);
+    }
+
+    public function moveFolder(Request $request, $id)
+    {
+        $this->abortUnlessAnyPermission(['create_document_folders', 'create_documents', 'delete_document_folders', 'delete_documents']);
+
+        $request->validate([
+            'parent_id' => 'nullable|integer|exists:folders,id',
+        ]);
+
+        $folder = Folder::with(['permissions', 'visibilityUsers'])->findOrFail($id);
+        abort_unless($this->canDeleteFolder($folder) || $this->canCreateInFolder($folder), 403, 'No autorizado para mover esta carpeta');
+
+        $targetParentId = $request->input('parent_id');
+        if ($targetParentId) {
+            $targetParent = Folder::with(['permissions', 'visibilityUsers'])->findOrFail($targetParentId);
+            abort_unless($this->canCreateInFolder($targetParent), 403, 'No autorizado para mover la carpeta a esta ubicación');
+
+            if ($folder->id === $targetParentId || $this->isFolderDescendant($folder, $targetParentId)) {
+                abort(422, 'No se puede mover una carpeta dentro de una de sus subcarpetas');
+            }
+        }
+
+        $folder->parent_id = $targetParentId;
+        $folder->save();
+
+        return response()->json($folder);
     }
 
     /**
@@ -670,5 +739,23 @@ class DocumentController extends Controller
         }
 
         return array_unique($ids);
+    }
+
+    private function isFolderDescendant(Folder $folder, int $ancestorId): bool
+    {
+        $current = $folder;
+
+        while ($current->parent_id) {
+            if ((int) $current->parent_id === $ancestorId) {
+                return true;
+            }
+
+            $current = $current->parent()->first();
+            if (!$current) {
+                break;
+            }
+        }
+
+        return false;
     }
 }
